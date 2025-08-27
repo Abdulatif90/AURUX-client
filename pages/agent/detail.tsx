@@ -6,22 +6,35 @@ import PropertyBigCard from '../../libs/components/common/PropertyBigCard';
 import ReviewCard from '../../libs/components/agent/ReviewCard';
 import { Box, Button, Pagination, Stack, Typography } from '@mui/material';
 import StarIcon from '@mui/icons-material/Star';
+<<<<<<< HEAD
 import { useMutation, useQuery, useReactiveVar } from '@apollo/client';
 import { useRouter } from 'next/router';
 import { Property } from '../../libs/types/property/property';
 import { Member } from '../../libs/types/member/member';
 import { sweetErrorHandling, sweetMixinErrorAlert, sweetTopSmallSuccessAlert } from '../../libs/sweetAlert';
+=======
+import { useReactiveVar } from '@apollo/client';
+import { useRouter } from 'next/router';
+import { Property } from '../../libs/types/property/property';
+import { Member } from '../../libs/types/member/member';
+import { sweetErrorHandling } from '../../libs/sweetAlert';
+>>>>>>> e29ae6d7734b775281fda1b1763fdb5dbfc89f12
 import { userVar } from '../../apollo/store';
 import { PropertiesInquiry } from '../../libs/types/property/property.input';
 import { CommentInput, CommentsInquiry } from '../../libs/types/comment/comment.input';
 import { Comment } from '../../libs/types/comment/comment';
 import { CommentGroup } from '../../libs/enums/comment.enum';
+<<<<<<< HEAD
 import { Messages, REACT_APP_API_URL } from '../../libs/config';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { CREATE_COMMENT, LIKE_TARGET_PROPERTY } from '../../apollo/user/mutation';
 import { GET_COMMENTS, GET_MEMBER, GET_PROPERTIES } from '../../apollo/user/query';
 import { T } from '../../libs/types/common';
 import { Message } from '../../libs/enums/common.enum';
+=======
+import { REACT_APP_API_URL } from '../../libs/config';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+>>>>>>> e29ae6d7734b775281fda1b1763fdb5dbfc89f12
 
 export const getStaticProps = async ({ locale }: any) => ({
 	props: {
@@ -33,7 +46,11 @@ const AgentDetail: NextPage = ({ initialInput, initialComment, ...props }: any) 
 	const device = useDeviceDetect();
 	const router = useRouter();
 	const user = useReactiveVar(userVar);
+<<<<<<< HEAD
 	const [agentId, setAgentId] = useState<string | null>(null);
+=======
+	const [mbId, setMbId] = useState<string | null>(null);
+>>>>>>> e29ae6d7734b775281fda1b1763fdb5dbfc89f12
 	const [agent, setAgent] = useState<Member | null>(null);
 	const [searchFilter, setSearchFilter] = useState<PropertiesInquiry>(initialInput);
 	const [agentProperties, setAgentProperties] = useState<Property[]>([]);
@@ -48,6 +65,7 @@ const AgentDetail: NextPage = ({ initialInput, initialComment, ...props }: any) 
 	});
 
 	/** APOLLO REQUESTS **/
+<<<<<<< HEAD
 const [createComment] = useMutation(CREATE_COMMENT);
 	const [likeTargetProperty] = useMutation(LIKE_TARGET_PROPERTY);
 	const {
@@ -126,6 +144,15 @@ const [createComment] = useMutation(CREATE_COMMENT);
 			getCommentsRefetch({ variables: { input: commentInquiry } }).then();
 		}
 	}, [commentInquiry]);
+=======
+	/** LIFECYCLES **/
+	useEffect(() => {
+		if (router.query.agentId) setMbId(router.query.agentId as string);
+	}, [router]);
+
+	useEffect(() => {}, [searchFilter]);
+	useEffect(() => {}, [commentInquiry]);
+>>>>>>> e29ae6d7734b775281fda1b1763fdb5dbfc89f12
 
 	/** HANDLERS **/
 	const redirectToMemberPageHandler = async (memberId: string) => {
@@ -149,6 +176,7 @@ const [createComment] = useMutation(CREATE_COMMENT);
 
 	const createCommentHandler = async () => {
 		try {
+<<<<<<< HEAD
 			console.log('pressed');
 			if (!user._id) throw new Error(Messages.error2);
 			if (user._id === agentId) throw new Error('Cannot write review for yourself');
@@ -160,10 +188,13 @@ const [createComment] = useMutation(CREATE_COMMENT);
 			});
 			setInsertCommentData({ ...insertCommentData, commentContent: '' });
 			await getCommentsRefetch({ input: commentInquiry });
+=======
+>>>>>>> e29ae6d7734b775281fda1b1763fdb5dbfc89f12
 		} catch (err: any) {
 			sweetErrorHandling(err).then();
 		}
 	};
+<<<<<<< HEAD
 	const likePropertyHandler = async (user: any, id: string) => {
 		try {
 			if (!id) return;
@@ -181,6 +212,8 @@ const [createComment] = useMutation(CREATE_COMMENT);
 			sweetMixinErrorAlert(err.message).then();
 		}
 	};
+=======
+>>>>>>> e29ae6d7734b775281fda1b1763fdb5dbfc89f12
 
 	if (device === 'mobile') {
 		return <div>AGENT DETAIL PAGE MOBILE</div>;
@@ -206,11 +239,15 @@ const [createComment] = useMutation(CREATE_COMMENT);
 							{agentProperties.map((property: Property) => {
 								return (
 									<div className={'wrap-main'} key={property?._id}>
+<<<<<<< HEAD
 										<PropertyBigCard
 											property={property}
 											key={property?._id}
 											likePropertyHandler={likePropertyHandler}
 										/>
+=======
+										<PropertyBigCard property={property} key={property?._id} />
+>>>>>>> e29ae6d7734b775281fda1b1763fdb5dbfc89f12
 									</div>
 								);
 							})}
