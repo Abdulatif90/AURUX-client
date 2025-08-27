@@ -19,11 +19,11 @@ const Footer = () => {
 						</Box>
 						<Box component={'div'} className={'footer-box'}>
 							<span>total free customer care</span>
-							<p>+82 10 4867 2909</p>
+							<p>+82 10 7622 6662</p>
 						</Box>
 						<Box component={'div'} className={'footer-box'}>
-							<span>nee live</span>
-							<p>+82 10 4867 2909</p>
+							<span>Sharipov Abdulatif</span>
+							<p>+82 10 7622 6662</p>
 							<span>Support?</span>
 						</Box>
 						<Box component={'div'} className={'footer-box'}>
@@ -64,6 +64,7 @@ const Footer = () => {
 				</Stack>
 				<Stack className={'second'}>
 					<span>© Nestar - All rights reserved. Nestar {moment().year()}</span>
+					<span>Author - Sharipov Abdulatif</span>
 				</Stack>
 			</Stack>
 		);
@@ -77,11 +78,11 @@ const Footer = () => {
 						</Box>
 						<Box component={'div'} className={'footer-box'}>
 							<span>total free customer care</span>
-							<p>+82 10 4867 2909</p>
+							<p>+82 10 7622 6662</p>
 						</Box>
 						<Box component={'div'} className={'footer-box'}>
 							<span>nee live</span>
-							<p>+82 10 4867 2909</p>
+							<p>+82 10 7622 6662</p>
 							<span>Support?</span>
 						</Box>
 						<Box component={'div'} className={'footer-box'}>
@@ -129,6 +130,7 @@ const Footer = () => {
 				</Stack>
 				<Stack className={'second'}>
 					<span>© Nestar - All rights reserved. Nestar {moment().year()}</span>
+					<span>Author - Sharipov Abdulatif</span>
 					<span>Privacy · Terms · Sitemap</span>
 				</Stack>
 			</Stack>
