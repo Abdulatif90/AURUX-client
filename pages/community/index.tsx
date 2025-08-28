@@ -16,6 +16,7 @@ import { useMutation, useQuery } from '@apollo/client';
 import { GET_BOARD_ARTICLES } from '../../apollo/user/query';
 import { Message } from '../../libs/enums/common.enum';
 import { sweetMixinErrorAlert, sweetTopSmallSuccessAlert } from '../../libs/sweetAlert';
+import { Messages } from '../../libs/config';
 
 export const getStaticProps = async ({ locale }: any) => ({
 	props: {
@@ -83,9 +84,9 @@ const Community: NextPage = ({ initialInput, ...props }: T) => {
 	};
 	const likeArticleHandler = async (e: any, user: T, id: string) => {
 		try {
-			e.stopPrpagation();
+			e.stopPropagation();
 			if (!id) return;
-			if (!user._id) throw new Error(Message.NOT_AUTHENTICATED);
+			if (!user._id) throw new Error(Messages.error2);
 
 			await likeTargetBoardArticle({
 				variables: { input: id },
