@@ -165,6 +165,7 @@ body::-webkit-scrollbar {
 							border-radius: 2px;
 							margin-right: 8px;
 						}
+						}
 					}
 				}
 			}
@@ -224,6 +225,9 @@ body::-webkit-scrollbar {
 							line-height: 26px;
 						}
 						svg {
+							width: 20px;
+							height: 20px;
+							color: #ffffff;
 						}
 					}
 				}
@@ -585,7 +589,7 @@ body::-webkit-scrollbar {
 					width: 100%;
 					display: flex;
 					flex-direction: column;
-					.msg-left {
+					.welcome {
 						margin-left: 10px;
 						padding: 9px;
 						width: auto;
@@ -595,6 +599,14 @@ body::-webkit-scrollbar {
 						border-radius: 20px 20px 20px 0px;
 						color: #fff;
 					}
+					.msg-left {
+						margin: 10px 0px 10px 10px;
+						padding: 9px;
+						width: auto;
+						height: auto;
+						display: flex;
+						background: #ffffff;
+						border-radius: 20px 20px 0px 20px;
 				}
 			}
 			.chat-bott {
@@ -1046,3 +1058,4 @@ body::-webkit-scrollbar {
 	border-radius: 2px;
 	margin-right: 8px;
 }
+
