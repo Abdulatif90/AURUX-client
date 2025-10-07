@@ -43,7 +43,7 @@ const AdminCommunity: NextPage = ({ initialInquiry, ...props }: any) => {
 		variables: { input: communityInquiry },
 		notifyOnNetworkStatusChange: true,
 		onCompleted: (data: T) => {
-			setArticles(data?.getAllBoardArticleByAdmin?.list);
+			setArticles(data?.getAllBoardArticleByAdmin?.list || []);
 			setArticleTotal(data?.getAllBoardArticleByAdmin?.metaCounter[0]?.total ?? 0);
 		},
 	});

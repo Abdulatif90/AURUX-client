@@ -87,11 +87,11 @@ const AdminUsers: NextPage = ({ initialInquiry, ...props }: any) => {
 			case 'ACTIVE':
 				setMembersInquiry({ ...membersInquiry, search: { memberStatus: MemberStatus.ACTIVE } });
 				break;
-			case 'BLOCK':
-				setMembersInquiry({ ...membersInquiry, search: { memberStatus: MemberStatus.BLOCK } });
+			case 'BLOCKED':
+				setMembersInquiry({ ...membersInquiry, search: { memberStatus: MemberStatus.BLOCKED } });
 				break;
-			case 'DELETE':
-				setMembersInquiry({ ...membersInquiry, search: { memberStatus: MemberStatus.DELETE } });
+			case 'DELETED':
+				setMembersInquiry({ ...membersInquiry, search: { memberStatus: MemberStatus.DELETED } });
 				break;
 			default:
 				delete membersInquiry?.search?.memberStatus;
@@ -184,16 +184,16 @@ const AdminUsers: NextPage = ({ initialInquiry, ...props }: any) => {
 									Active
 								</ListItem>
 								<ListItem
-									onClick={(e: any) => tabChangeHandler(e, 'BLOCK')}
-									value="BLOCK"
-									className={value === 'BLOCK' ? 'li on' : 'li'}
+									onClick={(e: any) => tabChangeHandler(e, 'BLOCKED')}
+									value="BLOCKED"
+									className={value === 'BLOCKED' ? 'li on' : 'li'}
 								>
 									Blocked
 								</ListItem>
 								<ListItem
-									onClick={(e: any) => tabChangeHandler(e, 'DELETE')}
-									value="DELETE"
-									className={value === 'DELETE' ? 'li on' : 'li'}
+									onClick={(e: any) => tabChangeHandler(e, 'DELETED')}
+									value="DELETED"
+									className={value === 'DELETED' ? 'li on' : 'li'}
 								>
 									Deleted
 								</ListItem>

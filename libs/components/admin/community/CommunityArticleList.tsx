@@ -120,7 +120,7 @@ function EnhancedTableHead(props: EnhancedTableProps) {
 }
 
 interface CommunityArticleListProps {
-	articles: BoardArticle[];
+	articles: BoardArticle[] | undefined;
 	anchorEl: any;
 	menuIconClickHandler: any;
 	menuIconCloseHandler: any;
@@ -139,7 +139,7 @@ const CommunityArticleList = (props: CommunityArticleListProps) => {
 					{/*@ts-ignore*/}
 					<EnhancedTableHead />
 					<TableBody>
-						{articles.length === 0 && (
+						{(!articles || articles.length === 0) && (
 							<TableRow>
 								<TableCell align="center" colSpan={8}>
 									<span className={'no-data'}>data not found!</span>
@@ -147,7 +147,7 @@ const CommunityArticleList = (props: CommunityArticleListProps) => {
 							</TableRow>
 						)}
 
-						{articles.length !== 0 &&
+						{articles && articles.length !== 0 &&
 							articles.map((article: BoardArticle, index: number) => (
 								<TableRow hover key={article._id} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
 									<TableCell align="left">{article._id}</TableCell>
