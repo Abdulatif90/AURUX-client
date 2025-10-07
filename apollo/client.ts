@@ -75,32 +75,42 @@ function createIsomorphicLink() {
 
 		// @ts-ignore
 		const link = new createUploadLink({
-			uri: process.env.REACT_APP_API_GRAPHQL_URL,
+			uri: process.env.REACT_APP_API_GRAPHQL_URL || process.env.NEXT_PUBLIC_API_GRAPHQL_URL || 'http://localhost:4000/graphql'
 		});
 
 		/* WEBSOCKET SUBSCRIPTION LINK */
-		const wsLink = new WebSocketLink({
-			uri: process.env.REACT_APP_API_WS ?? 'ws://127.0.0.1:3007',
+		const wsLink = new WebSocketLink({	
+			uri: process.env.REACT_APP_API_WS_URL || process.env.NEXT_PUBLIC_API_WS || 'ws://localhost:4000/graphql',
 			options: {
-				reconnect: false,
+				reconnect: true, // Enable reconnection
 				timeout: 30000,
 				connectionParams: () => {
 					return { headers: getHeaders() };
 				},
+				reconnectionAttempts: 5,
+				lazy: true,
 			},
 			webSocketImpl: LoggingWebSocket,
 		});
 
-		const errorLink = onError(({ graphQLErrors, networkError, response }) => {
+		const errorLink = onError(({ graphQLErrors, networkError, response, operation, forward }) => {
 			if (graphQLErrors) {
-				graphQLErrors.map(({ message, locations, path, extensions }) =>{
-					console.log(`[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`);
-				if (!message.includes('input')) sweetErrorAlert(message);
-			});
+				graphQLErrors.map(({ message, locations, path, extensions }) =>
+					console.log(`[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`),
+				);
 			}
-			if (networkError) console.log(`[Network error]: ${networkError}`);
-			// @ts-ignore
-			if (networkError?.statusCode === 401) {
+			if (networkError) {
+				console.log(`[Network error]: ${networkError}`);
+				// @ts-ignore
+				if (networkError?.statusCode === 401) {
+					// Handle 401 errors
+					console.warn('Unauthorized access detected');
+				}
+				// @ts-ignore
+				if (networkError?.name === 'AbortError') {
+					// Handle aborted requests that might cause loading cancellation
+					console.warn('Request was aborted');
+				}
 			}
 		});
 
@@ -121,8 +131,22 @@ function createApolloClient() {
 	return new ApolloClient({
 		ssrMode: typeof window === 'undefined',
 		link: createIsomorphicLink(),
-		cache: new InMemoryCache(),
+		cache: new InMemoryCache({
+			// Add cache configuration to prevent hydration issues
+			addTypename: true,
+			resultCaching: true,
+		}),
 		resolvers: {},
+		// Add default options to prevent loading cancellation
+		defaultOptions: {
+			watchQuery: {
+				errorPolicy: 'all',
+				notifyOnNetworkStatusChange: true,
+			},
+			query: {
+				errorPolicy: 'all',
+			},
+		},
 	});
 }
 
