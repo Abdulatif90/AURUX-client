@@ -63,7 +63,7 @@ const Footer = () => {
 					</Stack>
 				</Stack>
 				<Stack className={'second'}>
-					<span>© Nestar - All rights reserved. Nestar {moment().year()}</span>
+					<span>© Aurux - All rights reserved. Aurux {moment().year()}</span>
 					<span>Author - Sharipov Abdulatif</span>
 				</Stack>
 			</Stack>
@@ -129,7 +129,7 @@ const Footer = () => {
 					</Stack>
 				</Stack>
 				<Stack className={'second'}>
-					<span>© Nestar - All rights reserved. Nestar {moment().year()}</span>
+					<span>© Aurux - All rights reserved. Aurux {moment().year()}</span>
 					<span>Author - Sharipov Abdulatif</span>
 					<span>Privacy · Terms · Sitemap</span>
 				</Stack>

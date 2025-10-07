@@ -150,11 +150,15 @@ const AddProperty = ({ initialValues, ...props }: any) => {
 
 	const updatePropertyHandler = useCallback(async () => {
 		try {
-			//@ts-ignore
-			insertPropertyData?._id = getPropertyData?.getProperty?._id;
+			// Create update data with the existing property ID
+			const updateData = {
+				...insertPropertyData,
+				_id: getPropertyData?.getProperty?._id,
+			};
+			
 			const result = await updateProperty({
 				variables: {
-					input: insertPropertyData,
+					input: updateData,
 				},
 			});
 			await sweetMixinSuccessAlert('This property has been updated succeefully');
@@ -167,7 +171,7 @@ const AddProperty = ({ initialValues, ...props }: any) => {
 		} catch (err: any) {
 			sweetErrorHandling(err).then();
 		}
-	}, [insertPropertyData]);
+	}, [insertPropertyData, getPropertyData?.getProperty?._id]);
 
 	if (user?.memberType !== 'AGENT') {
 		router.back();

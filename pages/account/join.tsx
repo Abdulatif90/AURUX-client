@@ -5,7 +5,7 @@ import withLayoutBasic from '../../libs/components/layout/LayoutBasic';
 import { Box, Button, Checkbox, FormControlLabel, FormGroup, Stack } from '@mui/material';
 import { useRouter } from 'next/router';
 import { logIn, signUp } from '../../libs/auth';
-import { sweetMixinErrorAlert } from '../../libs/sweetAlert';
+import { sweetMixinErrorAlert, sweetMixinSuccessAlert } from '../../libs/sweetAlert';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 
 export const getStaticProps = async ({ locale }: any) => ({
@@ -55,7 +55,12 @@ const Join: NextPage = () => {
 		console.warn(input);
 		try {
 			await signUp(input.nick, input.password, input.phone, input.type);
-			await router.push(`${router.query.referrer ?? '/'}`);
+			// After successful signup, switch to login view
+			setLoginView(true);
+			// Clear password field for security
+			setInput(prev => ({ ...prev, password: '' }));
+			// Show success message
+			await sweetMixinSuccessAlert('Registration successful! Please login with your credentials.');
 		} catch (err: any) {
 			await sweetMixinErrorAlert(err.message);
 		}
@@ -74,7 +79,7 @@ const Join: NextPage = () => {
 							{/* @ts-ignore */}
 							<Box className={'logo'}>
 								<img src="/img/logo/logoText.svg" alt="" />
-								<span>Nestar</span>
+								<span>Aurux</span>
 							</Box>
 							<Box className={'info'}>
 								<span>{loginView ? 'login' : 'signup'}</span>

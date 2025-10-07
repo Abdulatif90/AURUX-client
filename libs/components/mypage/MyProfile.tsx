@@ -18,6 +18,7 @@ const MyProfile: NextPage = ({ initialValues, ...props }: any) => {
 	const [updateData, setUpdateData] = useState<MemberUpdate>(initialValues);
 
 	/** APOLLO REQUESTS **/
+
 	const [updateMember] = useMutation(UPDATE_MEMBER);
 
 	/** LIFECYCLES **/
@@ -37,28 +38,71 @@ const MyProfile: NextPage = ({ initialValues, ...props }: any) => {
 			const image = e.target.files[0];
 			console.log('+image:', image);
 
+			if (!image) {
+				alert('Rasm tanlanmadi');
+				return;
+			}
+
+			if (!token) {
+				alert('Avval tizimga kiring');
+				return;
+			}
+
+			// Rasm formatini tekshirish
+			const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+			if (!allowedTypes.includes(image.type)) {
+				alert('Faqat JPG, JPEG, PNG formatdagi rasmlar ruxsat etilgan');
+				return;
+			}
+
+			// Rasm hajmini tekshirish (5MB dan kichik bo'lishi kerak)
+			const maxSize = 5 * 1024 * 1024; // 5MB
+			if (image.size > maxSize) {
+				alert('Rasm hajmi 5MB dan kichik bo\'lishi kerak');
+				return;
+			}
+
+			console.log('Rasm ma\'lumotlari:', {
+				name: image.name,
+				type: image.type,
+				size: (image.size / 1024 / 1024).toFixed(2) + 'MB'
+			});
+
 			const formData = new FormData();
-			formData.append(
-				'operations',
-				JSON.stringify({
-					query: `mutation ImageUploader($file: Upload!, $target: String!) {
-						imageUploader(file: $file, target: $target) 
-				  }`,
-					variables: {
-						file: null,
-						target: 'member',
-					},
-				}),
-			);
-			formData.append(
-				'map',
-				JSON.stringify({
-					'0': ['variables.file'],
-				}),
-			);
+			
+			// GraphQL operatsiyasini to'g'ri formatda tayyorlash
+			const operations = {
+				query: `
+					mutation ImageUploader($file: Upload!, $target: String!) {
+						imageUploader(file: $file, target: $target)
+					}
+				`,
+				variables: {
+					file: null,
+					target: "member"
+				}
+			};
+
+			const map = {
+				"0": ["variables.file"]
+			};
+
+			formData.append('operations', JSON.stringify(operations));
+			formData.append('map', JSON.stringify(map));
 			formData.append('0', image);
 
-			const response = await axios.post(`${process.env.REACT_APP_API_GRAPHQL_URL}`, formData, {
+			console.log('Mutation yuborilmoqda:', operations.query);
+			console.log('Variables:', operations.variables);
+
+			// URL'larni tekshirish va to'g'rilash
+			const graphqlUrl = process.env.REACT_APP_API_GRAPHQL_URL || 
+							  process.env.NEXT_PUBLIC_API_GRAPHQL_URL || 
+							  'http://localhost:4000/graphql';
+			
+			console.log('GraphQL URL:', graphqlUrl);
+			console.log('API Base URL:', REACT_APP_API_URL);
+
+			const response = await axios.post(graphqlUrl, formData, {
 				headers: {
 					'Content-Type': 'multipart/form-data',
 					'apollo-require-preflight': true,
@@ -66,36 +110,86 @@ const MyProfile: NextPage = ({ initialValues, ...props }: any) => {
 				},
 			});
 
-			const responseImage = response.data.data.imageUploader;
-			console.log('+responseImage: ', responseImage);
-			updateData.memberImage = responseImage;
-			setUpdateData({ ...updateData });
+			console.log('Server javobi:', response.data);
 
-			return `${REACT_APP_API_URL}/${responseImage}`;
-		} catch (err) {
-			console.log('Error, uploadImage:', err);
+			// Javobni batafsil tekshirish
+			if (response.data?.data?.imageUploader) {
+				const responseImage = response.data.data.imageUploader;
+				console.log('Yuklangan rasm:', responseImage);
+				
+				// State'larni yangilash
+				const newUpdateData = { ...updateData, memberImage: responseImage };
+				setUpdateData(newUpdateData);
+				
+				// User global state'ni yangilash
+				const updatedUser = { ...user, memberImage: responseImage };
+				userVar(updatedUser);
+				
+				// LocalStorage'ni yangilash
+				updateUserInfo(updatedUser);
+				
+				// Force re-render uchun
+				window.dispatchEvent(new Event('userImageUpdated'));
+				
+				console.log('Final image URL:', `${REACT_APP_API_URL}${responseImage}`);
+				console.log('Updated user:', updatedUser);
+				console.log('Global userVar updated:', userVar());
+				alert('Rasm muvaffaqiyatli yuklandi va profil yangilandi!');
+				return `${REACT_APP_API_URL}${responseImage}`;
+			} 
+			
+			// Server xatolarini tekshirish
+			if (response.data?.errors) {
+				const error = response.data.errors[0];
+				console.error('GraphQL xatolik:', error);
+				throw new Error(error.message || 'Server xatoligi');
+			}
+			
+			// Noma'lum format
+			console.error('Kutilmagan javob:', response.data);
+			throw new Error('Server noto\'g\'ri javob qaytardi');
+		} catch (err: any) {
+			console.error('Upload xatolik:', err);
+			console.error('Server response:', err.response?.data);
+			
+			// Server javobidagi aniq xato
+			let errorMessage = 'Rasm yuklashda xatolik';
+			
+			if (err.response?.data?.errors) {
+				errorMessage = err.response.data.errors[0]?.message || errorMessage;
+			} else if (err.message) {
+				errorMessage = err.message;
+			}
+			
+			console.error('Final error message:', errorMessage);
+			alert(errorMessage);
+			
+			throw new Error(errorMessage);
 		}
+	};
+
+	const handleImageUpload = (e: any) => {
+		uploadImage(e).catch(error => {
+			console.error('Rasm yuklash muvaffaqiyatsiz:', error);
+		});
 	};
 
 	const updatePropertyHandler = useCallback(async () => {
 		try {
-			if(!user._id) throw new Error(Messages.error2);
+			if (!user._id) throw new Error(Messages.error2);
 			updateData._id = user._id;
 			const result = await updateMember({
 				variables: {
 					input: updateData,
 				},
 			});
-			console.log('+result', result);
 
-			// @ts-ignore
+			//@ts-ignore
 			const jwtToken = result.data.updateMember?.accessToken;
 			await updateStorage({ jwtToken });
-			updateUserInfo( result.data.updateMember?.accessToken );
-			await sweetMixinSuccessAlert('Profile updated successfully!', 800);
-
+			updateUserInfo(result.data.updateMember?.accessToken);
+			await sweetMixinSuccessAlert('Information updated successfully');
 		} catch (err: any) {
-			console.log('Error, updatePropertyHandler:', err);
 			sweetErrorHandling(err).then();
 		}
 	}, [updateData]);
@@ -112,6 +206,8 @@ const MyProfile: NextPage = ({ initialValues, ...props }: any) => {
 	};
 
 	console.log('+updateData', updateData);
+	console.log('Current memberImage:', updateData?.memberImage);
+	console.log('Full image URL:', updateData?.memberImage ? `${REACT_APP_API_URL}/${updateData?.memberImage}` : 'No image');
 
 	if (device === 'mobile') {
 		return <>MY PROFILE PAGE MOBILE</>;
@@ -132,10 +228,14 @@ const MyProfile: NextPage = ({ initialValues, ...props }: any) => {
 								<img
 									src={
 										updateData?.memberImage
-											? `${REACT_APP_API_URL}/${updateData?.memberImage}`
+											? `${REACT_APP_API_URL}${updateData?.memberImage}`
 											: `/img/profile/defaultUser.svg`
 									}
 									alt=""
+									onError={(e) => {
+										console.error('Rasm yuklanmadi:', `${REACT_APP_API_URL}${updateData?.memberImage}`);
+										e.currentTarget.src = '/img/profile/defaultUser.svg';
+									}}
 								/>
 							</Stack>
 							<Stack className="upload-big-box">
@@ -143,7 +243,7 @@ const MyProfile: NextPage = ({ initialValues, ...props }: any) => {
 									type="file"
 									hidden
 									id="hidden-input"
-									onChange={uploadImage}
+									onChange={handleImageUpload}
 									accept="image/jpg, image/jpeg, image/png"
 								/>
 								<label htmlFor="hidden-input" className="labeler">
