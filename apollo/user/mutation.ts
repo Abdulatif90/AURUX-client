@@ -328,3 +328,43 @@ export const UNSUBSCRIBE = gql`
 		}
 	}
 `;
+
+/**************************
+ *         CHAT           *
+ *************************/
+
+export const SEND_CHAT_MESSAGE = gql`
+	mutation SendChatMessage($input: ChatMessageInput!) {
+		sendChatMessage(input: $input) {
+			_id
+			messageText
+			messageAuthor
+			messageStatus
+			createdAt
+			updatedAt
+			memberData {
+				_id
+				memberNick
+				memberImage
+			}
+		}
+	}
+`;
+
+export const CHAT_MESSAGE_SUBSCRIPTION = gql`
+	subscription ChatMessageSubscription {
+		chatMessageUpdated {
+			_id
+			messageText
+			messageAuthor
+			messageStatus
+			createdAt
+			updatedAt
+			memberData {
+				_id
+				memberNick
+				memberImage
+			}
+		}
+	}
+`;

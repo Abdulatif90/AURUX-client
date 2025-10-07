@@ -616,3 +616,30 @@ export const GET_MEMBER_FOLLOWINGS = gql`
 		}
 	}
 `;
+
+/**************************
+ *         CHAT           *
+ *************************/
+
+export const GET_CHAT_MESSAGES = gql`
+	query GetChatMessages($input: ChatMessagesInquiry!) {
+		getChatMessages(input: $input) {
+			list {
+				_id
+				messageText
+				messageAuthor
+				messageStatus
+				createdAt
+				updatedAt
+				memberData {
+					_id
+					memberNick
+					memberImage
+				}
+			}
+			metaCounter {
+				total
+			}
+		}
+	}
+`;
