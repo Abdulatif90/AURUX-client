@@ -75,7 +75,8 @@ const generateSmartResponse = (userMessage: string, userName: string): string =>
 	return responses[Math.floor(Math.random() * responses.length)];
 };
 
-const NewMessage = ({ message }: { message: ChatMessage }) => {
+// Memoize NewMessage component to prevent unnecessary re-renders
+const NewMessage = React.memo(({ message }: { message: ChatMessage }) => {
 	if (message.isOwn) {
 		return (
 			<Box
@@ -97,7 +98,7 @@ const NewMessage = ({ message }: { message: ChatMessage }) => {
 			</Box>
 		);
 	}
-};
+});
 
 const Chat = () => {
 	const chatContentRef = useRef<HTMLDivElement>(null);
@@ -120,15 +121,29 @@ const Chat = () => {
 	const user = useReactiveVar(userVar);
 
 	// GraphQL mutations and subscriptions
-	const [sendChatMessage] = useMutation(SEND_CHAT_MESSAGE);
-	
-	// WebSocket subscription for real-time messages with error handling
-	const { data: subscriptionData, error: subscriptionError } = useSubscription(CHAT_MESSAGE_SUBSCRIPTION, {
-		errorPolicy: 'all',
+	const [sendChatMessage] = useMutation(SEND_CHAT_MESSAGE, {
+		errorPolicy: 'ignore',
 		onError: (error) => {
-			console.log('Chat subscription error (this is expected if backend is not running):', error);
+			if (process.env.NODE_ENV === 'development') {
+				console.log('Backend not available, using smart response system');
+			}
 		}
 	});
+	
+	// WebSocket subscription for real-time messages - DISABLED when backend not available
+	// Since WebSocket link is disabled in Apollo client, subscription won't throw errors
+	const subscriptionEnabled = false; // Set to true when backend is available
+	const { data: subscriptionData, error: subscriptionError } = useSubscription(
+		CHAT_MESSAGE_SUBSCRIPTION, 
+		{
+			skip: !subscriptionEnabled, // Skip subscription when disabled
+			shouldResubscribe: false,
+			errorPolicy: 'ignore',
+			onError: (error) => {
+				// Silently ignore - this is expected when backend is not available
+			}
+		}
+	);
 
 	/** LIFECYCLES **/
 	useEffect(() => {
@@ -142,7 +157,7 @@ const Chat = () => {
 		setOpenButton(false);
 	}, [router.pathname]);
 
-	// Handle subscription data
+	// Handle subscription data with performance optimization
 	useEffect(() => {
 		if (subscriptionData?.chatMessageUpdated) {
 			const newMessage = subscriptionData.chatMessageUpdated;
@@ -157,9 +172,14 @@ const Chat = () => {
 					: undefined,
 			};
 			
-			// Prevent duplicate messages
+			// Prevent duplicate messages - optimized check
 			setMessagesList(prev => {
-				const exists = prev.find(msg => msg.id === chatMessage.id);
+				// Quick check: if last message has same id, skip
+				if (prev.length > 0 && prev[prev.length - 1].id === chatMessage.id) {
+					return prev;
+				}
+				// Otherwise check if exists anywhere
+				const exists = prev.some(msg => msg.id === chatMessage.id);
 				if (!exists) {
 					return [...prev, chatMessage];
 				}
@@ -168,12 +188,17 @@ const Chat = () => {
 		}
 	}, [subscriptionData, user?._id]);
 
-	// Auto scroll to bottom when new message arrives
+	// Auto scroll to bottom when new message arrives - optimized with requestAnimationFrame
 	useEffect(() => {
 		if (chatContentRef.current) {
-			chatContentRef.current.scrollTop = chatContentRef.current.scrollHeight;
+			// Use requestAnimationFrame for smoother scrolling
+			requestAnimationFrame(() => {
+				if (chatContentRef.current) {
+					chatContentRef.current.scrollTop = chatContentRef.current.scrollHeight;
+				}
+			});
 		}
-	}, [messagesList]);
+	}, [messagesList.length]); // Only trigger on message count change
 
 	/** HANDLERS **/
 	const handleOpenChat = () => {
@@ -218,7 +243,7 @@ const Chat = () => {
 		// Add user message to list
 		setMessagesList(prev => [...prev, newUserMessage]);
 		
-		// Clear input
+		// Clear input immediately for better UX
 		setMessage('');
 		if (textInput.current) {
 			textInput.current.value = '';
@@ -245,7 +270,8 @@ const Chat = () => {
 			} catch (error) {
 				console.log('Backend not available, using smart response system');
 				
-				// Generate smart response after delay
+				// Generate smart response after shorter delay for better UX
+				const responseDelay = 500 + Math.random() * 1000; // Reduced from 1000-3000ms to 500-1500ms
 				setTimeout(() => {
 					setIsTyping(false);
 					
@@ -258,10 +284,11 @@ const Chat = () => {
 						isOwn: false,
 					};
 					setMessagesList(prev => [...prev, botMessage]);
-				}, 1000 + Math.random() * 2000); // Random delay for realism
+				}, responseDelay);
 			}
 		} else {
-			// For guest users, always use smart response system
+			// For guest users, use smart response system with optimized delay
+			const responseDelay = 500 + Math.random() * 1000; // Reduced from 1000-3000ms to 500-1500ms
 			setTimeout(() => {
 				setIsTyping(false);
 				
@@ -274,7 +301,7 @@ const Chat = () => {
 					isOwn: false,
 				};
 				setMessagesList(prev => [...prev, botMessage]);
-			}, 1000 + Math.random() * 2000); // Random delay for realism
+			}, responseDelay);
 		}
 	};
 

@@ -33,7 +33,7 @@ const About: NextPage = () => {
 									<div>
 										<img src="/img/icons/garden.svg" alt="" />
 									</div>
-									<span>Modern Villa</span>
+										<span>Modern Villas</span>
 									<p>Nullam sollicitudin blandit Nullam maximus.</p>
 								</div>
 								<div className={'box'}>

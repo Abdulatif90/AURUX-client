@@ -7,7 +7,40 @@ import { LOGIN, SIGN_UP } from '../../apollo/user/mutation';
 
 export function getJwtToken(): any {
 	if (typeof window !== 'undefined') {
-		return localStorage.getItem('accessToken') ?? '';
+		const token = localStorage.getItem('accessToken') ?? '';
+		
+		// Token formatini tekshirish
+		if (token) {
+			const parts = token.split('.');
+			if (parts.length !== 3) {
+				console.error('⚠️ Invalid token format. Expected JWT with 3 parts, got:', parts.length);
+				localStorage.removeItem('accessToken');
+				return '';
+			}
+		}
+		
+		return token;
+	}
+	return '';
+}
+
+export function isTokenValid(): boolean {
+	const token = getJwtToken();
+	if (!token) return false;
+	
+	try {
+		const decoded: any = decodeJWT(token);
+		const currentTime = Date.now() / 1000;
+		
+		if (decoded.exp && decoded.exp < currentTime) {
+			console.warn('⚠️ Token muddati tugagan');
+			return false;
+		}
+		
+		return true;
+	} catch (err) {
+		console.error('⚠️ Token decode xatosi:', err);
+		return false;
 	}
 }
 

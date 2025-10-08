@@ -123,11 +123,11 @@ export function ScrollControls({
 		const onScrollEnd = () => (el.style.overflowY = 'hidden');
 		el.addEventListener('scroll', onScrollStart);
 
-		// Add a delay to determine when scrolling ends
+		// Add a delay to determine when scrolling ends - optimized with shorter timeout
 		let scrollEndTimeout: any = null;
 		el.addEventListener('scroll', () => {
 			clearTimeout(scrollEndTimeout);
-			scrollEndTimeout = setTimeout(onScrollEnd, 1000); // Adjust the delay as needed
+			scrollEndTimeout = setTimeout(onScrollEnd, 150); // Reduced from 1000ms to 150ms for better performance
 		});
 
 		return () => {
@@ -148,29 +148,38 @@ export function ScrollControls({
 		let current = 0;
 		let disableScroll = true;
 		let firstRun = true;
+		let rafPending = false; // For throttling with requestAnimationFrame
 
 		const onScroll = () => {
 			// Prevent first scroll because it is indirectly caused by the one pixel offset
 			if (!enabled || firstRun) return;
-			invalidate();
-			current = el[horizontal ? 'scrollLeft' : 'scrollTop'];
-			scroll.current = current / scrollThreshold;
-			if (infinite) {
-				if (!disableScroll) {
-					if (scroll.current >= 1 - 0.001) {
-						const damp = 1 - state.offset;
-						el[horizontal ? 'scrollLeft' : 'scrollTop'] = 1;
-						scroll.current = state.offset = -damp;
-						disableScroll = true;
-					} else if (current <= 0) {
-						const damp = 1 + state.offset;
-						el[horizontal ? 'scrollLeft' : 'scrollTop'] = scrollLength;
-						scroll.current = state.offset = damp;
-						disableScroll = true;
+			
+			// Throttle scroll events with requestAnimationFrame for better performance
+			if (rafPending) return;
+			rafPending = true;
+			
+			requestAnimationFrame(() => {
+				rafPending = false;
+				invalidate();
+				current = el[horizontal ? 'scrollLeft' : 'scrollTop'];
+				scroll.current = current / scrollThreshold;
+				if (infinite) {
+					if (!disableScroll) {
+						if (scroll.current >= 1 - 0.001) {
+							const damp = 1 - state.offset;
+							el[horizontal ? 'scrollLeft' : 'scrollTop'] = 1;
+							scroll.current = state.offset = -damp;
+							disableScroll = true;
+						} else if (current <= 0) {
+							const damp = 1 + state.offset;
+							el[horizontal ? 'scrollLeft' : 'scrollTop'] = scrollLength;
+							scroll.current = state.offset = damp;
+							disableScroll = true;
+						}
 					}
+					if (disableScroll) setTimeout(() => (disableScroll = false), 40);
 				}
-				if (disableScroll) setTimeout(() => (disableScroll = false), 40);
-			}
+			});
 		};
 		el.addEventListener('scroll', onScroll, { passive: true });
 		requestAnimationFrame(() => (firstRun = false));
@@ -186,9 +195,18 @@ export function ScrollControls({
 
 	let last = 0;
 	useFrame((_, delta) => {
-		state.offset = THREE.MathUtils.damp((last = state.offset), scroll.current, damping, delta);
-		state.delta = THREE.MathUtils.damp(state.delta, Math.abs(last - state.offset), damping, delta);
-		if (state.delta > eps) invalidate();
+		// Skip frame if delta is too small (no significant change)
+		if (delta < 0.001) return;
+		
+		const newOffset = THREE.MathUtils.damp((last = state.offset), scroll.current, damping, delta);
+		const newDelta = THREE.MathUtils.damp(state.delta, Math.abs(last - state.offset), damping, delta);
+		
+		// Only update and invalidate if there's a meaningful change
+		if (Math.abs(newOffset - state.offset) > eps || Math.abs(newDelta - state.delta) > eps) {
+			state.offset = newOffset;
+			state.delta = newDelta;
+			if (state.delta > eps) invalidate();
+		}
 	});
 	return <context.Provider value={state}>{children}</context.Provider>;
 }

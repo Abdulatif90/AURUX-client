@@ -6,7 +6,7 @@ import { PropertyLocation, PropertyType } from '../../enums/property.enum';
 import { REACT_APP_API_URL, propertySquare } from '../../config';
 import { PropertyInput } from '../../types/property/property.input';
 import axios from 'axios';
-import { getJwtToken } from '../../auth';
+import { getJwtToken, isTokenValid } from '../../auth';
 import { sweetErrorHandling, sweetMixinErrorAlert, sweetMixinSuccessAlert } from '../../sweetAlert';
 import { useMutation, useQuery, useReactiveVar } from '@apollo/client';
 import { userVar } from '../../../apollo/store';
@@ -20,7 +20,6 @@ const AddProperty = ({ initialValues, ...props }: any) => {
 	const [insertPropertyData, setInsertPropertyData] = useState<PropertyInput>(initialValues);
 	const [propertyType, setPropertyType] = useState<PropertyType[]>(Object.values(PropertyType));
 	const [propertyLocation, setPropertyLocation] = useState<PropertyLocation[]>(Object.values(PropertyLocation));
-	const token = getJwtToken();
 	const user = useReactiveVar(userVar);
 
 	/** APOLLO REQUESTS **/
@@ -60,11 +59,29 @@ const AddProperty = ({ initialValues, ...props }: any) => {
 	/** HANDLERS **/
 	async function uploadImages() {
 		try {
+			// Token'ni har safar dinamik olamiz
+			const token = getJwtToken();
+			
+			if (!token || token === '') {
+				await sweetMixinErrorAlert('Token topilmadi! Iltimos qaytadan login qiling.');
+				await router.push('/account/join');
+				return;
+			}
+			
+			if (!isTokenValid()) {
+				await sweetMixinErrorAlert('Token muddati tugagan! Iltimos qaytadan login qiling.');
+				localStorage.removeItem('accessToken');
+				await router.push('/account/join');
+				return;
+			}
+			
+			console.log('✅ Token tekshirildi va amal qilmoqda');
+			
 			const formData = new FormData();
 			const selectedFiles = inputRef.current.files;
 
 			if (selectedFiles.length == 0) return false;
-			if (selectedFiles.length > 5) throw new Error('Cannot upload more than 5 images!');
+			if (selectedFiles.length > 5) throw new Error('5 tadan ko\'p rasm yuklab bo\'lmaydi!');
 
 			formData.append(
 				'operations',
@@ -102,11 +119,21 @@ const AddProperty = ({ initialValues, ...props }: any) => {
 
 			const responseImages = response.data.data.imagesUploader;
 
-			console.log('+responseImages: ', responseImages);
+			console.log('✅ Rasmlar yuklandi:', responseImages);
 			setInsertPropertyData({ ...insertPropertyData, propertyImages: responseImages });
+			await sweetMixinSuccessAlert('Rasmlar muvaffaqiyatli yuklandi!');
 		} catch (err: any) {
-			console.log('err: ', err.message);
-			await sweetMixinErrorAlert(err.message);
+			console.error('❌ Upload xatolik:', err);
+			console.error('Error response:', err.response?.data);
+			
+			let errorMessage = 'Rasm yuklashda xatolik yuz berdi';
+			if (err.response?.data?.errors) {
+				errorMessage = err.response.data.errors[0]?.message || errorMessage;
+			} else if (err.message) {
+				errorMessage = err.message;
+			}
+			
+			await sweetMixinErrorAlert(errorMessage);
 		}
 	}
 

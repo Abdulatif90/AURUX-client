@@ -2,7 +2,7 @@ import React, { useMemo, useRef, useState } from 'react';
 import { Box, Button, FormControl, MenuItem, Stack, Typography, Select, TextField } from '@mui/material';
 import { BoardArticleCategory } from '../../enums/board-article.enum';
 import { Editor } from '@toast-ui/react-editor';
-import { getJwtToken } from '../../auth';
+import { getJwtToken, isTokenValid } from '../../auth';
 import { REACT_APP_API_URL } from '../../config';
 import { useRouter } from 'next/router';
 import axios from 'axios';
@@ -16,7 +16,6 @@ import { sweetErrorHandling, sweetTopSuccessAlert } from '../../sweetAlert';
 
 const TuiEditor = () => {
 	const editorRef = useRef<Editor>(null),
-		token = getJwtToken(),
 		router = useRouter();
 	const [articleCategory, setArticleCategory] = useState<BoardArticleCategory>(BoardArticleCategory.FREE);
 
@@ -35,6 +34,22 @@ const TuiEditor = () => {
 	/** HANDLERS **/
 	const uploadImage = async (image: any) => {
 		try {
+			// Token'ni dinamik olamiz
+			const token = getJwtToken();
+			
+			if (!token || token === '') {
+				alert('Token topilmadi! Iltimos qaytadan login qiling.');
+				await router.push('/account/join');
+				return;
+			}
+			
+			if (!isTokenValid()) {
+				alert('Token muddati tugagan! Iltimos qaytadan login qiling.');
+				localStorage.removeItem('accessToken');
+				await router.push('/account/join');
+				return;
+			}
+			
 			const formData = new FormData();
 			formData.append(
 				'operations',
@@ -65,12 +80,14 @@ const TuiEditor = () => {
 			});
 
 			const responseImage = response.data.data.imageUploader;
-			console.log('=responseImage: ', responseImage);
+			console.log('✅ Article rasm yuklandi:', responseImage);
 			memoizedValues.articleImage = responseImage;
 
 			return `${REACT_APP_API_URL}/${responseImage}`;
-		} catch (err) {
-			console.log('Error, uploadImage:', err);
+		} catch (err: any) {
+			console.error('❌ Article rasm yuklashda xatolik:', err);
+			console.error('Error response:', err.response?.data);
+			throw err;
 		}
 	};
 

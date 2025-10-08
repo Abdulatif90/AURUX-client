@@ -197,7 +197,7 @@ const Top = () => {
 									<div className={'login-user'} onClick={(event: any) => setLogoutAnchor(event.currentTarget)}>
 										<img
 											src={
-												user?.memberImage ? `${REACT_APP_API_URL}${user?.memberImage}` : '/img/profile/defaultUser.svg'
+												user?.memberImage ? `${REACT_APP_API_URL}/${user?.memberImage}` : '/img/profile/defaultUser.svg'
 											}
 											alt=""
 											key={user?.memberImage} // Force re-render when image changes

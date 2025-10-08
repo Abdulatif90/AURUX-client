@@ -7,6 +7,12 @@
     flex-direction: row;
     justify-content: space-around;
     align-items: center;
+    background: rgba(24, 26, 32, 0.85);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    position: sticky;
+    top: 0;
+    z-index: 99;
   }
 
   .info-box {

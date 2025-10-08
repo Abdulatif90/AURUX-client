@@ -23,7 +23,7 @@ import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { BoardArticle } from '../../libs/types/board-article/board-article';
 import { GET_BOARD_ARTICLE, GET_COMMENTS } from '../../apollo/user/query';
 import { CREATE_COMMENT, LIKE_TARGET_BOARD_ARTICLE, UPDATE_COMMENT } from '../../apollo/user/mutation';
-import { Messages } from '../../libs/config';
+import { Messages, REACT_APP_API_URL } from '../../libs/config';
 import {
 	sweetConfirmAlert,
 	sweetMixinErrorAlert,
@@ -85,7 +85,7 @@ const CommunityDetail: NextPage = ({ initialInput, ...props }: T) => {
 		onCompleted: (data: any) => {
 			setBoardArticle(data?.getBoardArticle);
 			if (data?.getBoardArticle?.memberData?.memberImage) {
-				setMemberImage(`${process.env.REACT_APP_API_URL}/${data?.getBoardArticle?.memberData?.memberImage}`);
+				setMemberImage(`${REACT_APP_API_URL}/${data?.getBoardArticle?.memberData?.memberImage}`);
 			}
 		},
 	});
@@ -217,7 +217,7 @@ const CommunityDetail: NextPage = ({ initialInput, ...props }: T) => {
 	};
 
 	const getCommentMemberImage = (imageUrl: string | undefined) => {
-		if (imageUrl) return `${process.env.REACT_APP_API_URL}/${imageUrl}`;
+		if (imageUrl) return `${REACT_APP_API_URL}/${imageUrl}`;
 		else return '/img/community/articleImg.png';
 	};
 
