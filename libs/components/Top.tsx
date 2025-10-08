@@ -213,7 +213,7 @@ const Top = () => {
 										}}
 										sx={{ mt: '5px' }}
 									>
-										<MenuItem onClick={() => logOut()}>
+										<MenuItem onClick={async () => await logOut()}>
 											<Logout fontSize="small" style={{ color: 'blue', marginRight: '10px' }} />
 											Logout
 										</MenuItem>

@@ -44,25 +44,57 @@ const Join: NextPage = () => {
 	const doLogin = useCallback(async () => {
 		console.warn(input);
 		try {
+			if (!input.nick || !input.password) {
+				await sweetMixinErrorAlert('Please enter both nickname and password.');
+				return;
+			}
 			await logIn(input.nick, input.password);
+			await sweetMixinSuccessAlert('Welcome back! Login successful.');
 			await router.push(`${router.query.referrer ?? '/'}`);
 		} catch (err: any) {
-			await sweetMixinErrorAlert(err.message);
+			// Errors are already handled in auth/index.ts
+			console.error('Login error:', err);
 		}
 	}, [input]);
 
 	const doSignUp = useCallback(async () => {
 		console.warn(input);
 		try {
+			// Validation checks
+			if (!input.nick || !input.password || !input.phone) {
+				await sweetMixinErrorAlert('Please fill in all required fields.');
+				return;
+			}
+			
+			// Phone number validation - only digits allowed
+			const phoneRegex = /^\+?[0-9]{10,15}$/;
+			if (!phoneRegex.test(input.phone)) {
+				await sweetMixinErrorAlert('Please enter a valid phone number (10-15 digits).');
+				return;
+			}
+			
+			// Nickname validation - minimum 3 characters
+			if (input.nick.length < 3) {
+				await sweetMixinErrorAlert('Nickname must be at least 3 characters long.');
+				return;
+			}
+			
+			// Password validation - minimum 4 characters
+			if (input.password.length < 4) {
+				await sweetMixinErrorAlert('Password must be at least 4 characters long.');
+				return;
+			}
+			
 			await signUp(input.nick, input.password, input.phone, input.type);
 			// After successful signup, switch to login view
 			setLoginView(true);
-			// Clear password field for security
-			setInput(prev => ({ ...prev, password: '' }));
+			// Clear all input fields
+			setInput({ nick: '', password: '', phone: '', type: 'USER' });
 			// Show success message
 			await sweetMixinSuccessAlert('Registration successful! Please login with your credentials.');
 		} catch (err: any) {
-			await sweetMixinErrorAlert(err.message);
+			// Errors are already handled in auth/index.ts with sweetAlert
+			console.error('Signup error:', err);
 		}
 	}, [input]);
 
@@ -91,6 +123,7 @@ const Join: NextPage = () => {
 									<input
 										type="text"
 										placeholder={'Enter Nickname'}
+										value={input.nick}
 										onChange={(e) => handleInput('nick', e.target.value)}
 										required={true}
 										onKeyDown={(event) => {
@@ -102,8 +135,9 @@ const Join: NextPage = () => {
 								<div className={'input-box'}>
 									<span>Password</span>
 									<input
-										type="text"
+										type="password"
 										placeholder={'Enter Password'}
+										value={input.password}
 										onChange={(e) => handleInput('password', e.target.value)}
 										required={true}
 										onKeyDown={(event) => {
@@ -116,13 +150,19 @@ const Join: NextPage = () => {
 									<div className={'input-box'}>
 										<span>Phone</span>
 										<input
-											type="text"
-											placeholder={'Enter Phone'}
-											onChange={(e) => handleInput('phone', e.target.value)}
+											type="tel"
+											placeholder={'Enter Phone (+998901234567)'}
+											value={input.phone}
+											onChange={(e) => {
+												// Allow only numbers and plus sign
+												const value = e.target.value.replace(/[^\d+]/g, '');
+												handleInput('phone', value);
+											}}
 											required={true}
 											onKeyDown={(event) => {
 												if (event.key == 'Enter') doSignUp();
 											}}
+											maxLength={15}
 										/>
 									</div>
 								)}

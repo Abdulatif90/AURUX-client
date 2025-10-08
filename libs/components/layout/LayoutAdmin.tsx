@@ -53,9 +53,9 @@ const withAdminLayout = (Component: ComponentType) => {
 			setAnchorElUser(null);
 		};
 
-		const logoutHandler = () => {
-			logOut();
-			router.push('/').then();
+		const logoutHandler = async () => {
+			await logOut();
+			// No need to push to '/' because logOut already redirects
 		};
 
 		if (!user || user?.memberType !== MemberType.ADMIN) return null;

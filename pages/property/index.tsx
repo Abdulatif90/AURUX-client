@@ -40,7 +40,7 @@ const PropertyList: NextPage = ({ initialInput, ...props }: any) => {
 	/** APOLLO REQUESTS **/
 	const [likeProperty] = useMutation(LIKE_TARGET_PROPERTY, {
 		onCompleted: (data) => {
-			sweetTopSmallSuccessAlert('Property liked successfully');
+			// Alert removed - no notification on like
 		},
 		onError: (error) => {
 			sweetMixinErrorAlert(error.message);
@@ -104,7 +104,7 @@ const PropertyList: NextPage = ({ initialInput, ...props }: any) => {
 				},
 			});
 			await getPropertiesRefetch({ input: initialInput });
-			await sweetTopSmallSuccessAlert('Property liked successfully', 800);
+			// Alert removed - no notification on like
 
 		} catch (err: any) {
 			console.log('ERROR, likePropertyHandler:', err.message);
