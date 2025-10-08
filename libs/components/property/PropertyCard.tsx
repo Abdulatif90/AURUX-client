@@ -26,7 +26,7 @@ const PropertyCard = (props: PropertyCardType) => {
 	const imagePath: string = property?.propertyImages[0]
 		? `${REACT_APP_API_URL}/${property?.propertyImages[0]}`
 		: '/img/banner/header1.svg';
-
+	console.log('PROPERTY CARD RENDERED', imagePath);
 	if (device === 'mobile') {
 		return <div>PROPERTY CARD</div>;
 	} else {

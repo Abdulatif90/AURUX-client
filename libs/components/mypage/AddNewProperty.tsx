@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/router';
 import { Button, Stack, Typography } from '@mui/material';
 import useDeviceDetect from '../../hooks/useDeviceDetect';
-import { PropertyLocation, PropertyType } from '../../enums/property.enum';
+import { PropertyLocation, PropertyStatus, PropertyType } from '../../enums/property.enum';
 import { REACT_APP_API_URL, propertySquare } from '../../config';
 import { PropertyInput } from '../../types/property/property.input';
 import axios from 'axios';
@@ -53,6 +53,7 @@ const AddProperty = ({ initialValues, ...props }: any) => {
 			propertySquare: getPropertyData?.getProperty ? getPropertyData?.getProperty?.propertySquare : 0,
 			propertyDesc: getPropertyData?.getProperty ? getPropertyData?.getProperty?.propertyDesc : '',
 			propertyImages: getPropertyData?.getProperty ? getPropertyData?.getProperty?.propertyImages : [],
+			propertyStatus: getPropertyData?.getProperty ? getPropertyData?.getProperty?.propertyStatus : PropertyStatus.ACTIVE,
 		});
 	}, [getPropertyLoading, getPropertyData]);
 
@@ -63,13 +64,13 @@ const AddProperty = ({ initialValues, ...props }: any) => {
 			const token = getJwtToken();
 			
 			if (!token || token === '') {
-				await sweetMixinErrorAlert('Token topilmadi! Iltimos qaytadan login qiling.');
+				await sweetMixinErrorAlert('Please log in to upload images.');
 				await router.push('/account/join');
 				return;
 			}
 			
 			if (!isTokenValid()) {
-				await sweetMixinErrorAlert('Token muddati tugagan! Iltimos qaytadan login qiling.');
+				await sweetMixinErrorAlert('Your session has expired. Please log in again.');
 				localStorage.removeItem('accessToken');
 				await router.push('/account/join');
 				return;
@@ -81,7 +82,7 @@ const AddProperty = ({ initialValues, ...props }: any) => {
 			const selectedFiles = inputRef.current.files;
 
 			if (selectedFiles.length == 0) return false;
-			if (selectedFiles.length > 5) throw new Error('5 tadan ko\'p rasm yuklab bo\'lmaydi!');
+			if (selectedFiles.length > 5) throw new Error('You can upload a maximum of 5 images.');
 
 			formData.append(
 				'operations',
@@ -121,12 +122,12 @@ const AddProperty = ({ initialValues, ...props }: any) => {
 
 			console.log('✅ Rasmlar yuklandi:', responseImages);
 			setInsertPropertyData({ ...insertPropertyData, propertyImages: responseImages });
-			await sweetMixinSuccessAlert('Rasmlar muvaffaqiyatli yuklandi!');
+			await sweetMixinSuccessAlert('Images have been uploaded successfully');
 		} catch (err: any) {
 			console.error('❌ Upload xatolik:', err);
 			console.error('Error response:', err.response?.data);
 			
-			let errorMessage = 'Rasm yuklashda xatolik yuz berdi';
+			let errorMessage = 'Error occurred while uploading images';
 			if (err.response?.data?.errors) {
 				errorMessage = err.response.data.errors[0]?.message || errorMessage;
 			} else if (err.message) {
@@ -140,12 +141,10 @@ const AddProperty = ({ initialValues, ...props }: any) => {
 	const doDisabledCheck = () => {
 		if (
 			insertPropertyData.propertyTitle === '' ||
-			insertPropertyData.propertyPrice === 0 || // @ts-ignore
-			insertPropertyData.propertyType === '' || // @ts-ignore
-			insertPropertyData.propertyLocation === '' || // @ts-ignore
-			insertPropertyData.propertyAddress === '' || // @ts-ignore
-			insertPropertyData.propertyBarter === '' || // @ts-ignore
-			insertPropertyData.propertyRent === '' ||
+			insertPropertyData.propertyPrice === 0 ||
+			!insertPropertyData.propertyType ||
+			!insertPropertyData.propertyLocation ||
+			insertPropertyData.propertyAddress === '' ||
 			insertPropertyData.propertyRooms === 0 ||
 			insertPropertyData.propertyBeds === 0 ||
 			insertPropertyData.propertySquare === 0 ||
@@ -154,13 +153,33 @@ const AddProperty = ({ initialValues, ...props }: any) => {
 		) {
 			return true;
 		}
+		return false;
 	};
 
 	const insertPropertyHandler = useCallback(async () => {
 		try {
+			// Validate and clean the data before sending
+			const cleanedData = {
+				propertyTitle: insertPropertyData.propertyTitle,
+				propertyPrice: insertPropertyData.propertyPrice,
+				propertyType: insertPropertyData.propertyType as PropertyType,
+				propertyLocation: insertPropertyData.propertyLocation as PropertyLocation,
+				propertyAddress: insertPropertyData.propertyAddress,
+				propertyBarter: insertPropertyData.propertyBarter,
+				propertyRent: insertPropertyData.propertyRent,
+				propertyRooms: insertPropertyData.propertyRooms,
+				propertyBeds: insertPropertyData.propertyBeds,
+				propertySquare: insertPropertyData.propertySquare,
+				propertyDesc: insertPropertyData.propertyDesc,
+				propertyImages: insertPropertyData.propertyImages,
+				propertyStatus: PropertyStatus.ACTIVE,
+			};
+			
+			console.log('Sending property data:', cleanedData);
+			
 			const result = await createProperty({
 				variables: {
-					input: insertPropertyData,
+					input: cleanedData,
 				},
 			});
 			await sweetMixinSuccessAlert('This property has been created successfully ');
@@ -171,6 +190,7 @@ const AddProperty = ({ initialValues, ...props }: any) => {
 				},
 			});
 		} catch (err: any) {
+			console.error('Create property error:', err);
 			sweetErrorHandling(err).then();
 		}
 	}, [insertPropertyData]);
@@ -479,6 +499,7 @@ const AddProperty = ({ initialValues, ...props }: any) => {
 								</svg>
 								<Stack className="text-box">
 									<Typography className="drag-title">Drag and drop images here</Typography>
+									<Typography className="drag-title">Please, 5 images required!!!</Typography>
 									<Typography className="format-title">Photos must be JPEG or PNG format and least 2048x768</Typography>
 								</Stack>
 								<Button
@@ -555,6 +576,7 @@ AddProperty.defaultProps = {
 		propertySquare: 0,
 		propertyDesc: '',
 		propertyImages: [],
+		propertyStatus: PropertyStatus.ACTIVE,
 	},
 };
 
