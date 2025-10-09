@@ -112,6 +112,7 @@ const Chat = () => {
 		}
 	]);
 	const [onlineUsers, setOnlineUsers] = useState<number>(0);
+	const [chatBackendAvailable, setChatBackendAvailable] = useState<boolean | null>(null); // null = not checked, true = available, false = not available
 	const textInput = useRef<HTMLInputElement>(null);
 	const [message, setMessage] = useState<string>('');
 	const [open, setOpen] = useState(false);
@@ -122,10 +123,10 @@ const Chat = () => {
 
 	// GraphQL mutations and subscriptions
 	const [sendChatMessage] = useMutation(SEND_CHAT_MESSAGE, {
-		errorPolicy: 'ignore',
+		errorPolicy: 'all', // Changed from 'ignore' to properly handle errors
 		onError: (error) => {
 			if (process.env.NODE_ENV === 'development') {
-				console.log('Backend not available, using smart response system');
+				console.log('Chat backend not available:', error.message);
 			}
 		}
 	});
@@ -198,7 +199,52 @@ const Chat = () => {
 				}
 			});
 		}
-	}, [messagesList.length]); // Only trigger on message count change
+	}, [messagesList.length]);
+
+	// Check chat backend availability on component mount
+	useEffect(() => {
+		const checkBackendAvailability = async () => {
+			if (chatBackendAvailable !== null) return; // Already checked
+			
+			try {
+				const response = await fetch(process.env.REACT_APP_API_GRAPHQL_URL || process.env.NEXT_PUBLIC_API_GRAPHQL_URL || 'http://localhost:3005/graphql', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						query: `
+							query CheckChatAvailability {
+								__type(name: "Mutation") {
+									fields {
+										name
+									}
+								}
+							}
+						`
+					}),
+				});
+				
+				if (response.ok) {
+					const data = await response.json();
+					const mutations = data.data?.__type?.fields || [];
+					const hasChatMutation = mutations.some((field: any) => field.name === 'sendChatMessage');
+					setChatBackendAvailable(hasChatMutation);
+					
+					if (process.env.NODE_ENV === 'development') {
+						console.log(`Chat backend ${hasChatMutation ? 'is' : 'is not'} available`);
+					}
+				} else {
+					setChatBackendAvailable(false);
+				}
+			} catch (error) {
+				setChatBackendAvailable(false);
+				if (process.env.NODE_ENV === 'development') {
+					console.log('Chat backend availability check failed:', error);
+				}
+			}
+		};
+		
+		checkBackendAvailability();
+	}, [chatBackendAvailable]); // Only trigger on message count change
 
 	/** HANDLERS **/
 	const handleOpenChat = () => {
@@ -252,8 +298,8 @@ const Chat = () => {
 		// Show typing indicator
 		setIsTyping(true);
 
-		// If user is logged in, try to send to backend
-		if (user?._id) {
+		// If user is logged in and chat backend is available, try to send to backend
+		if (user?._id && chatBackendAvailable === true) {
 			try {
 				// Try to send to backend (if available)
 				await sendChatMessage({
@@ -268,7 +314,9 @@ const Chat = () => {
 				// If successful, the message will come back through subscription
 				setIsTyping(false);
 			} catch (error) {
-				console.log('Backend not available, using smart response system');
+				if (process.env.NODE_ENV === 'development') {
+					console.log('Chat backend not available, using smart response system');
+				}
 				
 				// Generate smart response after shorter delay for better UX
 				const responseDelay = 500 + Math.random() * 1000; // Reduced from 1000-3000ms to 500-1500ms
@@ -287,7 +335,7 @@ const Chat = () => {
 				}, responseDelay);
 			}
 		} else {
-			// For guest users, use smart response system with optimized delay
+			// For guest users or when backend is not available, use smart response system with optimized delay
 			const responseDelay = 500 + Math.random() * 1000; // Reduced from 1000-3000ms to 500-1500ms
 			setTimeout(() => {
 				setIsTyping(false);
@@ -349,7 +397,11 @@ const Chat = () => {
 						type={'text'}
 						name={'message'}
 						className={'msg-input'}
-						placeholder={user?._id ? 'Type message' : 'Type message (as guest)'}
+						placeholder={
+							chatBackendAvailable === false 
+								? (user?._id ? 'Type message (AI Assistant)' : 'Type message (AI Assistant, as guest)')
+								: (user?._id ? 'Type message' : 'Type message (as guest)')
+						}
 						value={message}
 						onChange={getInputMessageHandler}
 						onKeyDown={getKeyHandler}
