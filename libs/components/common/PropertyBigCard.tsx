@@ -78,7 +78,9 @@ const PropertyBigCard = (props: PropertyBigCardProps) => {
 								color={'default'}
 								onClick={(e:any) => {
 									e.stopPropagation();
-									likePropertyHandler(property?._id);
+									if (likePropertyHandler) {
+										likePropertyHandler(user, property?._id);
+									}
 								}}
 							>
 								{property?.meLiked && property?.meLiked[0]?.myFavorite ? (

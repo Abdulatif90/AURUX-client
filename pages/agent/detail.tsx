@@ -219,7 +219,6 @@ const [createComment] = useMutation(CREATE_COMMENT);
 											key={property?._id}
 											likePropertyHandler={likePropertyHandler}
 										/>
-										<PropertyBigCard property={property} key={property?._id} />
 									</div>
 								);
 							})}
