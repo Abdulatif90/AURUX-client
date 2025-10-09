@@ -3,6 +3,7 @@ import { Stack, Box, Divider, Typography } from '@mui/material';
 import IconButton from '@mui/material/IconButton';
 import useDeviceDetect from '../../hooks/useDeviceDetect';
 import FavoriteIcon from '@mui/icons-material/Favorite';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import { Property } from '../../types/property/property';
 import RemoveRedEyeIcon from '@mui/icons-material/RemoveRedEye';
 import { REACT_APP_API_URL } from '../../config';
@@ -13,10 +14,12 @@ import { userVar } from '../../../apollo/store';
 interface TrendPropertyCardProps {
 	property: Property;
 	likePropertyHandler: any;
+	myFavorites?: boolean;
+	recentlyVisited?: boolean;
 }
 
 const TrendPropertyCard = (props: TrendPropertyCardProps) => {
-	const { property, likePropertyHandler } = props;
+	const { property, likePropertyHandler, myFavorites, recentlyVisited } = props;
 	const device = useDeviceDetect();
 	const router = useRouter();
 	const user = useReactiveVar(userVar);
@@ -73,11 +76,13 @@ const pushDetailHandler = async (propertyId: string) => {
 							</IconButton>
 							<Typography className="view-cnt">{property?.propertyViews}</Typography>
 							<IconButton color={'default'} onClick={() => likePropertyHandler(user, property._id)}>
-								{property?.meLiked && property?.meLiked[0]?.myFavorite ? (
-									<FavoriteIcon style={{ color: 'red' }} />
-								) : (
-									<FavoriteIcon />
-								)}
+								{myFavorites ? (
+										<FavoriteIcon color="primary" />
+									) : property?.meLiked && property?.meLiked[0]?.myFavorite ? (
+										<FavoriteIcon color="primary" />
+									) : (
+										<FavoriteBorderIcon />
+									)}
 							</IconButton>
 							<Typography className="view-cnt">{property?.propertyLikes}</Typography>
 						</div>

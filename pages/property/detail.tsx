@@ -450,7 +450,7 @@ const {
 								<Stack className={'floor-plans-config'}>
 									<Typography className={'title'}>Floor Plans</Typography>
 									<Stack className={'image-box'}>
-										<img src={'/img/property/floorPlan.png'} alt={'image'} />
+										<img src={'/img/property/floorPlan.jpg'} alt={'image'} />
 									</Stack>
 								</Stack>
 								<Stack className={'address-config'}>

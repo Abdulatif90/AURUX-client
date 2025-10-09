@@ -1,27 +1,38 @@
-import React, { ChangeEvent, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { NextPage } from 'next';
+import { useRouter } from 'next/router';
 import useDeviceDetect from '../../libs/hooks/useDeviceDetect';
 import withLayoutBasic from '../../libs/components/layout/LayoutBasic';
-import PropertyBigCard from '../../libs/components/common/PropertyBigCard';
-import ReviewCard from '../../libs/components/agent/ReviewCard';
-import { Box, Button, Pagination, Stack, Typography } from '@mui/material';
-import StarIcon from '@mui/icons-material/Star';
+import { Button, Stack, Typography, Tab, Tabs, IconButton, Backdrop, Pagination } from '@mui/material';
+import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import { useMutation, useQuery, useReactiveVar } from '@apollo/client';
-import { useRouter } from 'next/router';
-import { Property } from '../../libs/types/property/property';
-import { Member } from '../../libs/types/member/member';
-import { sweetErrorHandling, sweetMixinErrorAlert, sweetTopSmallSuccessAlert } from '../../libs/sweetAlert';
+import Moment from 'react-moment';
 import { userVar } from '../../apollo/store';
-import { PropertiesInquiry } from '../../libs/types/property/property.input';
+import ThumbUpOffAltIcon from '@mui/icons-material/ThumbUpOffAlt';
+import ThumbUpAltIcon from '@mui/icons-material/ThumbUpAlt';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import ChatIcon from '@mui/icons-material/Chat';
+import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineRounded';
 import { CommentInput, CommentsInquiry } from '../../libs/types/comment/comment.input';
 import { Comment } from '../../libs/types/comment/comment';
-import { CommentGroup } from '../../libs/enums/comment.enum';
-import { Messages, REACT_APP_API_URL } from '../../libs/config';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { CREATE_COMMENT, LIKE_TARGET_PROPERTY } from '../../apollo/user/mutation';
-import { GET_COMMENTS, GET_MEMBER, GET_PROPERTIES } from '../../apollo/user/query';
+import dynamic from 'next/dynamic';
+import { CommentGroup, CommentStatus } from '../../libs/enums/comment.enum';
 import { T } from '../../libs/types/common';
-import { Message } from '@mui/icons-material';
+import EditIcon from '@mui/icons-material/Edit';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { BoardArticle } from '../../libs/types/board-article/board-article';
+import { GET_BOARD_ARTICLE, GET_COMMENTS } from '../../apollo/user/query';
+import { CREATE_COMMENT, LIKE_TARGET_BOARD_ARTICLE, UPDATE_COMMENT } from '../../apollo/user/mutation';
+import { Messages } from '../../libs/config';
+import {
+	sweetConfirmAlert,
+	sweetMixinErrorAlert,
+	sweetMixinSuccessAlert,
+	sweetTopSmallSuccessAlert,
+} from '../../libs/sweetAlert';
+import { CommentUpdate } from '../../libs/types/comment/comment.update';
+
+const ToastViewerComponent = dynamic(() => import('../../libs/components/community/TViewer'), { ssr: false });
 
 export const getStaticProps = async ({ locale }: any) => ({
 	props: {
@@ -29,70 +40,52 @@ export const getStaticProps = async ({ locale }: any) => ({
 	},
 });
 
-const AgentDetail: NextPage = ({ initialInput, initialComment, ...props }: any) => {
+const CommunityDetail: NextPage = ({ initialInput, ...props }: T) => {
 	const device = useDeviceDetect();
 	const router = useRouter();
+	const { query } = router;
+
+	const articleId = query?.id as string;
+	const articleCategory = query?.articleCategory as string;
+
+	const [comment, setComment] = useState<string>('');
+	const [wordsCnt, setWordsCnt] = useState<number>(0);
+	const [updatedCommentWordsCnt, setUpdatedCommentWordsCnt] = useState<number>(0);
 	const user = useReactiveVar(userVar);
-	const [agentId, setAgentId] = useState<string | null>(null);
-	const [mbId, setMbId] = useState<string | null>(null);
-	const [agent, setAgent] = useState<Member | null>(null);
-	const [searchFilter, setSearchFilter] = useState<PropertiesInquiry>(initialInput);
-	const [agentProperties, setAgentProperties] = useState<Property[]>([]);
-	const [propertyTotal, setPropertyTotal] = useState<number>(0);
-	const [commentInquiry, setCommentInquiry] = useState<CommentsInquiry>(initialComment);
-	const [agentComments, setAgentComments] = useState<Comment[]>([]);
-	const [commentTotal, setCommentTotal] = useState<number>(0);
-	const [insertCommentData, setInsertCommentData] = useState<CommentInput>({
-		commentGroup: CommentGroup.MEMBER,
-		commentContent: '',
-		commentRefId: '',
+	const [comments, setComments] = useState<Comment[]>([]);
+	const [total, setTotal] = useState<number>(0);
+	const [searchFilter, setSearchFilter] = useState<CommentsInquiry>({
+		...initialInput,
 	});
+	const [memberImage, setMemberImage] = useState<string>('/img/community/articleImg.png');
+	const [anchorEl, setAnchorEl] = useState<any | null>(null);
+	const open = Boolean(anchorEl);
+	const id = open ? 'simple-popover' : undefined;
+	const [openBackdrop, setOpenBackdrop] = useState<boolean>(false);
+	const [updatedComment, setUpdatedComment] = useState<string>('');
+	const [updatedCommentId, setUpdatedCommentId] = useState<string>('');
+	const [likeLoading, setLikeLoading] = useState<boolean>(false);
+	const [boardArticle, setBoardArticle] = useState<BoardArticle>();
 
 	/** APOLLO REQUESTS **/
-const [createComment] = useMutation(CREATE_COMMENT);
-	const [likeTargetProperty] = useMutation(LIKE_TARGET_PROPERTY);
+	const [likeTargetBoardArticle] = useMutation(LIKE_TARGET_BOARD_ARTICLE);
+	const [createComment] = useMutation(CREATE_COMMENT);
+	const [updateComment] = useMutation(UPDATE_COMMENT);
+
 	const {
-		loading: getMemberLoading,
-		data: getMemberData,
-		error: getMemberError,
-		refetch: getMemberRefetch,
-	} = useQuery(GET_MEMBER, {
+		loading: boardArticleLoading,
+		data: boardArticleData,
+		error: boardArticleError,
+		refetch: boardArticleRefetch,
+	} = useQuery(GET_BOARD_ARTICLE, {
 		fetchPolicy: 'network-only',
-		variables: { input: agentId },
-		skip: !agentId,
-		onCompleted: (data: T) => {
-			setAgent(data?.getMember);
-			setSearchFilter({
-				...searchFilter,
-				search: {
-					memberId: data?.getMember?._id,
-				},
-			});
-			setCommentInquiry({
-				...commentInquiry,
-				search: {
-					commentRefId: data?.getMember?._id,
-				},
-			});
-			setInsertCommentData({
-				...insertCommentData,
-				commentRefId: data?.getMember?._id,
-			});
-		},
-	});
-	const {
-		loading: getPropertiesLoading,
-		data: getPropertiesData,
-		error: getPropertiesError,
-		refetch: getPropertiesRefetch,
-	} = useQuery(GET_PROPERTIES, {
-		fetchPolicy: 'network-only',
-		variables: { input: searchFilter },
-		skip: !searchFilter.search.memberId,
+		variables: { input: articleId },
 		notifyOnNetworkStatusChange: true,
-		onCompleted: (data: T) => {
-			setAgentProperties(data?.getProperties?.list);
-			setPropertyTotal(data?.getProperties?.metaCounter[0]?.total ?? 0);
+		onCompleted: (data: any) => {
+			setBoardArticle(data?.getBoardArticle);
+			if (data?.getBoardArticle?.memberData?.memberImage) {
+				setMemberImage(`${process.env.REACT_APP_API_URL}/${data?.getBoardArticle?.memberData?.memberImage}`);
+			}
 		},
 	});
 
@@ -102,235 +95,445 @@ const [createComment] = useMutation(CREATE_COMMENT);
 		error: getCommentsError,
 		refetch: getCommentsRefetch,
 	} = useQuery(GET_COMMENTS, {
-		fetchPolicy: 'network-only',
-		variables: { input: commentInquiry },
-		skip: !commentInquiry.search.commentRefId,
+		fetchPolicy: 'cache-and-network',
+		variables: { input: searchFilter },
 		notifyOnNetworkStatusChange: true,
-		onCompleted: (data: T) => {
-			setAgentComments(data?.getComments?.list);
-			setCommentTotal(data?.getComments?.metaCounter[0]?.total ?? 0);
+		onCompleted: (data: any) => {
+			setComments(data?.getComments?.list);
+			setTotal(data?.getComments?.metaCounter?.[0]?.total || 0);
 		},
 	});
 
 	/** LIFECYCLES **/
 	useEffect(() => {
-		if (router.query.agentId) setAgentId(router.query.agentId as string);
-	}, [router]);
-
-	useEffect(() => {
-		if (searchFilter.search.memberId) {
-			getPropertiesRefetch({ variables: { input: searchFilter } }).then();
-		}
-	}, [searchFilter]);
-	useEffect(() => {
-		if (commentInquiry.search.commentRefId) {
-			getCommentsRefetch({ variables: { input: commentInquiry } }).then();
-		}
-	}, [commentInquiry]);
-	/** LIFECYCLES **/
-	useEffect(() => {
-		if (router.query.agentId) setMbId(router.query.agentId as string);
-	}, [router]);
-
-	useEffect(() => {}, [searchFilter]);
-	useEffect(() => {}, [commentInquiry]);
+		if (articleId) setSearchFilter({ ...searchFilter, search: { commentRefId: articleId } });
+	}, [articleId]);
 
 	/** HANDLERS **/
-	const redirectToMemberPageHandler = async (memberId: string) => {
+	const tabChangeHandler = (event: React.SyntheticEvent, value: string) => {
+		router.replace(
+			{
+				pathname: '/community',
+				query: { articleCategory: value },
+			},
+			'/community',
+			{ shallow: true },
+		);
+	};
+
+	const likeBoArticleHandler = async (user: any, id: any) => {
 		try {
-			if (memberId === user?._id) await router.push(`/mypage?memberId=${memberId}`);
-			else await router.push(`/member?memberId=${memberId}`);
-		} catch (error) {
-			await sweetErrorHandling(error);
-		}
-	};
-
-	const propertyPaginationChangeHandler = async (event: ChangeEvent<unknown>, value: number) => {
-		searchFilter.page = value;
-		setSearchFilter({ ...searchFilter });
-	};
-
-	const commentPaginationChangeHandler = async (event: ChangeEvent<unknown>, value: number) => {
-		commentInquiry.page = value;
-		setCommentInquiry({ ...commentInquiry });
-	};
-
-	const createCommentHandler = async () => {
-		try {
-			console.log('pressed');
-			if (!user._id) throw new Error(Messages.error2);
-			if (user._id === agentId) throw new Error('Cannot write review for yourself');
-
-			await createComment({
-				variables: {
-					input: insertCommentData,
-				},
-			});
-			setInsertCommentData({ ...insertCommentData, commentContent: '' });
-			await getCommentsRefetch({ input: commentInquiry });
-		} catch (err: any) {
-			sweetErrorHandling(err).then();
-		}
-	};
-	const likePropertyHandler = async (user: any, id: string) => {
-		try {
+			if (likeLoading) return;
 			if (!id) return;
 			if (!user._id) throw new Error(Messages.error2);
 
-			await likeTargetProperty({
-				variables: { input: id },
+			setLikeLoading(true);
+
+			await likeTargetBoardArticle({
+				variables: {
+					input: id,
+				},
 			});
 
-			await getPropertiesRefetch({ input: searchFilter });
-
-			// Alert removed - no notification on like
+			await boardArticleRefetch({ input: articleId });
+			await sweetTopSmallSuccessAlert('success', 800);
 		} catch (err: any) {
-			console.log('Error, likePropertyHandler', err.message);
+			console.log('ERROR, likePropertyHandler:', err.message);
 			sweetMixinErrorAlert(err.message).then();
+		} finally {
+			setLikeLoading(false);
 		}
 	};
 
+	const creteCommentHandler = async () => {
+		if (!comment) return;
+		try {
+			if (!user._id) throw new Error(Messages.error2);
+			const commentInput: CommentInput = {
+				commentGroup: CommentGroup.ARTICLE,
+				commentRefId: articleId,
+				commentContent: comment,
+			};
+
+			await createComment({
+				variables: {
+					input: commentInput,
+				},
+			});
+
+			await getCommentsRefetch({ input: searchFilter });
+			await boardArticleRefetch({ input: articleId });
+			setComment('');
+			await sweetMixinSuccessAlert('Successfully commented!');
+		} catch (error: any) {
+			sweetMixinErrorAlert(error.message);
+		}
+	};
+
+	const updateButtonHandler = async (commentId: string, commentStatus?: CommentStatus.DELETE) => {
+		try {
+			if (!user?._id) throw new Error(Messages.error2);
+			if (!commentId) throw new Error('Select a comment to update!');
+			if (updatedComment === comments?.find((comment) => comment?._id === commentId)?.commentContent) return;
+
+			const updateData: CommentUpdate = {
+				_id: commentId,
+				...(commentStatus && { commentStatus: commentStatus }),
+				...(updatedComment && { commentContent: updatedComment }),
+			};
+
+			if (!updateData?.commentContent && !updateData?.commentStatus)
+				throw new Error('Provide data to update your comment!');
+
+			if (commentStatus) {
+				if (await sweetConfirmAlert('Do you want to delete the comment?')) {
+					await updateComment({
+						variables: {
+							input: updateData,
+						},
+					});
+				} else return;
+			} else {
+				await updateComment({
+					variables: {
+						input: updateData,
+					},
+				});
+				await sweetMixinSuccessAlert('Successfully updated!');
+			}
+			await getCommentsRefetch({ input: searchFilter });
+		} catch (error: any) {
+			sweetMixinErrorAlert(error.message);
+		} finally {
+			setOpenBackdrop(false);
+			setUpdatedComment('');
+			setUpdatedCommentWordsCnt(0);
+			setUpdatedCommentId('');
+		}
+	};
+
+	const getCommentMemberImage = (imageUrl: string | undefined) => {
+		if (imageUrl) return `${process.env.REACT_APP_API_URL}/${imageUrl}`;
+		else return '/img/community/articleImg.png';
+	};
+
+	const goMemberPage = (id: any) => {
+		if (id === user?._id) router.push('/mypage');
+		else router.push(`/member?memberId=${id}`);
+	};
+
+	const cancelButtonHandler = () => {
+		setOpenBackdrop(false);
+		setUpdatedComment('');
+		setUpdatedCommentWordsCnt(0);
+	};
+
+	const updateCommentInputHandler = (value: string) => {
+		if (value.length > 100) return;
+		setUpdatedCommentWordsCnt(value.length);
+		setUpdatedComment(value);
+	};
+
+	const paginationHandler = (e: T, value: number) => {
+		setSearchFilter({ ...searchFilter, page: value });
+	};
+
 	if (device === 'mobile') {
-		return <div>AGENT DETAIL PAGE MOBILE</div>;
+		return <div>COMMUNITY DETAIL PAGE MOBILE</div>;
 	} else {
 		return (
-			<Stack className={'agent-detail-page'}>
-				<Stack className={'container'}>
-					<Stack className={'agent-info'}>
-						<img
-							src={agent?.memberImage ? `${REACT_APP_API_URL}/${agent?.memberImage}` : '/img/profile/defaultUser.svg'}
-							alt=""
-						/>
-						<Box component={'div'} className={'info'} onClick={() => redirectToMemberPageHandler(agent?._id as string)}>
-							<strong>{agent?.memberFullName ?? agent?.memberNick}</strong>
-							<div>
-								<img src="/img/icons/call.svg" alt="" />
-								<span>{agent?.memberPhone}</span>
-							</div>
-						</Box>
-					</Stack>
-					<Stack className={'agent-home-list'}>
-						<Stack className={'card-wrap'}>
-							{agentProperties.map((property: Property) => {
-								return (
-									<div className={'wrap-main'} key={property?._id}>
-										<PropertyBigCard
-											property={property}
-											key={property?._id}
-											likePropertyHandler={likePropertyHandler}
-										/>
-									</div>
-								);
-							})}
+			<div id="community-detail-page">
+				<div className="container">
+					<Stack className="main-box">
+						<Stack className="left-config">
+							<Stack className={'image-info'}>
+								<img src={'/img/logo/logoText.svg'} />
+								<Stack className={'community-name'}>
+									<Typography className={'name'}>Community Board Article</Typography>
+								</Stack>
+							</Stack>
+							<Tabs
+								orientation="vertical"
+								aria-label="lab API tabs example"
+								TabIndicatorProps={{
+									style: { display: 'none' },
+								}}
+								onChange={tabChangeHandler}
+								value={articleCategory}
+							>
+								<Tab
+									value={'FREE'}
+									label={'Free Board'}
+									className={`tab-button ${articleCategory === 'FREE' ? 'active' : ''}`}
+								/>
+								<Tab
+									value={'RECOMMEND'}
+									label={'Recommendation'}
+									className={`tab-button ${articleCategory === 'RECOMMEND' ? 'active' : ''}`}
+								/>
+								<Tab
+									value={'NEWS'}
+									label={'News'}
+									className={`tab-button ${articleCategory === 'NEWS' ? 'active' : ''}`}
+								/>
+								<Tab
+									value={'HUMOR'}
+									label={'Humor'}
+									className={`tab-button ${articleCategory === 'HUMOR' ? 'active' : ''}`}
+								/>
+							</Tabs>
 						</Stack>
-						<Stack className={'pagination'}>
-							{propertyTotal ? (
-								<>
+						<div className="community-detail-config">
+							<Stack className="title-box">
+								<Stack className="left">
+									<Typography className="title">{articleCategory} BOARD</Typography>
+									<Typography className="sub-title">
+										Express your opinions freely here without content restrictions
+									</Typography>
+								</Stack>
+								<Button
+									onClick={() =>
+										router.push({
+											pathname: '/mypage',
+											query: {
+												category: 'writeArticle',
+											},
+										})
+									}
+									className="right"
+								>
+									Write
+								</Button>
+							</Stack>
+							<div className="config">
+								<Stack className="first-box-config">
+									<Stack className="content-and-info">
+										<Stack className="content">
+											<Typography className="content-data">{boardArticle?.articleTitle}</Typography>
+											<Stack className="member-info">
+												<img
+													src={memberImage}
+													alt=""
+													className="member-img"
+													onClick={() => goMemberPage(boardArticle?.memberData?._id)}
+												/>
+												<Typography className="member-nick" onClick={() => goMemberPage(boardArticle?.memberData?._id)}>
+													{boardArticle?.memberData?.memberNick}
+												</Typography>
+												<Stack className="divider"></Stack>
+												<Moment className={'time-added'} format={'DD.MM.YY HH:mm'}>
+													{boardArticle?.createdAt}
+												</Moment>
+											</Stack>
+										</Stack>
+										<Stack className="info">
+											<Stack className="icon-info">
+												{boardArticle?.meLiked && boardArticle?.meLiked[0]?.myFavorite ? (
+													<ThumbUpAltIcon onClick={() => likeBoArticleHandler(user, boardArticle?._id)} />
+												) : (
+													<ThumbUpOffAltIcon onClick={() => likeBoArticleHandler(user, boardArticle?._id)} />
+												)}
+
+												<Typography className="text">{boardArticle?.articleLikes}</Typography>
+											</Stack>
+											<Stack className="divider"></Stack>
+											<Stack className="icon-info">
+												<VisibilityIcon />
+												<Typography className="text">{boardArticle?.articleViews}</Typography>
+											</Stack>
+											<Stack className="divider"></Stack>
+											<Stack className="icon-info">
+												{total > 0 ? <ChatIcon /> : <ChatBubbleOutlineRoundedIcon />}
+
+												<Typography className="text">{total}</Typography>
+											</Stack>
+										</Stack>
+									</Stack>
+									<Stack>
+										<ToastViewerComponent markdown={boardArticle?.articleContent} className={'ytb_play'} />
+									</Stack>
+									<Stack className="like-and-dislike">
+										<Stack className="top">
+											<Button>
+												{boardArticle?.meLiked && boardArticle?.meLiked[0]?.myFavorite ? (
+													<ThumbUpAltIcon onClick={() => likeBoArticleHandler(user, boardArticle?._id)} />
+												) : (
+													<ThumbUpOffAltIcon onClick={() => likeBoArticleHandler(user, boardArticle?._id)} />
+												)}
+												<Typography className="text">{boardArticle?.articleLikes}</Typography>
+											</Button>
+										</Stack>
+									</Stack>
+								</Stack>
+								<Stack
+									className="second-box-config"
+									sx={{ borderBottom: total > 0 ? 'none' : '1px solid #eee', border: '1px solid #eee' }}
+								>
+									<Typography className="title-text">Comments ({total})</Typography>
+									<Stack className="leave-comment">
+										<input
+											type="text"
+											placeholder="Leave a comment"
+											value={comment}
+											onChange={(e) => {
+												if (e.target.value.length > 100) return;
+												setWordsCnt(e.target.value.length);
+												setComment(e.target.value);
+											}}
+										/>
+										<Stack className="button-box">
+											<Typography>{wordsCnt}/100</Typography>
+											<Button onClick={creteCommentHandler}>comment</Button>
+										</Stack>
+									</Stack>
+								</Stack>
+								{total > 0 && (
+									<Stack className="comments">
+										<Typography className="comments-title">Comments</Typography>
+									</Stack>
+								)}
+								{comments?.map((commentData, index) => {
+									return (
+										<Stack className="comments-box" key={commentData?._id}>
+											<Stack className="main-comment">
+												<Stack className="member-info">
+													<Stack
+														className="name-date"
+														onClick={() => goMemberPage(commentData?.memberData?._id as string)}
+													>
+														<img src={getCommentMemberImage(commentData?.memberData?.memberImage)} alt="" />
+														<Stack className="name-date-column">
+															<Typography className="name">{commentData?.memberData?.memberNick}</Typography>
+															<Typography className="date">
+																<Moment className={'time-added'} format={'DD.MM.YY HH:mm'}>
+																	{commentData?.createdAt}
+																</Moment>
+															</Typography>
+														</Stack>
+													</Stack>
+													{commentData?.memberId === user?._id && (
+														<Stack className="buttons">
+															<IconButton
+																onClick={() => {
+																	setUpdatedCommentId(commentData?._id);
+																	updateButtonHandler(commentData?._id, CommentStatus.DELETE);
+																}}
+															>
+																<DeleteForeverIcon sx={{ color: '#757575', cursor: 'pointer' }} />
+															</IconButton>
+															<IconButton
+																onClick={() => {
+																	setUpdatedComment(commentData?.commentContent);
+																	setUpdatedCommentWordsCnt(commentData?.commentContent?.length);
+																	setUpdatedCommentId(commentData?._id);
+																	setOpenBackdrop(true);
+																}}
+															>
+																<EditIcon sx={{ color: '#757575' }} />
+															</IconButton>
+															<Backdrop
+																sx={{
+																	top: '40%',
+																	right: '25%',
+																	left: '25%',
+																	width: '1000px',
+																	height: 'fit-content',
+																	borderRadius: '10px',
+																	color: '#ffffff',
+																	zIndex: 999,
+																}}
+																open={openBackdrop}
+															>
+																<Stack
+																	sx={{
+																		width: '100%',
+																		height: '100%',
+																		background: 'white',
+																		border: '1px solid #b9b9b9',
+																		padding: '15px',
+																		gap: '10px',
+																		borderRadius: '10px',
+																		boxShadow: 'rgba(99, 99, 99, 0.2) 0px 2px 8px 0px',
+																	}}
+																>
+																	<Typography variant="h4" color={'#b9b9b9'}>
+																		Update comment
+																	</Typography>
+																	<Stack gap={'20px'}>
+																		<input
+																			autoFocus
+																			value={updatedComment}
+																			onChange={(e) => updateCommentInputHandler(e.target.value)}
+																			type="text"
+																			style={{
+																				border: '1px solid #b9b9b9',
+																				outline: 'none',
+																				height: '40px',
+																				padding: '0px 10px',
+																				borderRadius: '5px',
+																			}}
+																		/>
+																		<Stack width={'100%'} flexDirection={'row'} justifyContent={'space-between'}>
+																			<Typography variant="subtitle1" color={'#b9b9b9'}>
+																				{updatedCommentWordsCnt}/100
+																			</Typography>
+																			<Stack sx={{ flexDirection: 'row', alignSelf: 'flex-end', gap: '10px' }}>
+																				<Button
+																					variant="outlined"
+																					color="inherit"
+																					onClick={() => cancelButtonHandler()}
+																				>
+																					Cancel
+																				</Button>
+																				<Button
+																					variant="contained"
+																					color="inherit"
+																					onClick={() => updateButtonHandler(updatedCommentId, undefined)}
+																				>
+																					Update
+																				</Button>
+																			</Stack>
+																		</Stack>
+																	</Stack>
+																</Stack>
+															</Backdrop>
+														</Stack>
+													)}
+												</Stack>
+												<Stack className="content">
+													<Typography>{commentData?.commentContent}</Typography>
+												</Stack>
+											</Stack>
+										</Stack>
+									);
+								})}
+								{total > 0 && (
 									<Stack className="pagination-box">
 										<Pagination
+											count={Math.ceil(total / searchFilter.limit) || 1}
 											page={searchFilter.page}
-											count={Math.ceil(propertyTotal / searchFilter.limit) || 1}
-											onChange={propertyPaginationChangeHandler}
 											shape="circular"
 											color="primary"
+											onChange={paginationHandler}
 										/>
 									</Stack>
-									<span>
-										Total {propertyTotal} propert{propertyTotal > 1 ? 'ies' : 'y'} available
-									</span>
-								</>
-							) : (
-								<div className={'no-data'}>
-									<img src="/img/icons/icoAlert.svg" alt="" />
-									<p>No properties found!</p>
-								</div>
-							)}
-						</Stack>
+								)}
+							</div>
+						</div>
 					</Stack>
-					<Stack className={'review-box'}>
-						<Stack className={'main-intro'}>
-							<span>Reviews</span>
-							<p>we are glad to see you again</p>
-						</Stack>
-						{commentTotal !== 0 && (
-							<Stack className={'review-wrap'}>
-								<Box component={'div'} className={'title-box'}>
-									<StarIcon />
-									<span>
-										{commentTotal} review{commentTotal > 1 ? 's' : ''}
-									</span>
-								</Box>
-								{agentComments?.map((comment: Comment) => {
-									return <ReviewCard comment={comment} key={comment?._id} />;
-								})}
-								<Box component={'div'} className={'pagination-box'}>
-									<Pagination
-										page={commentInquiry.page}
-										count={Math.ceil(commentTotal / commentInquiry.limit) || 1}
-										onChange={commentPaginationChangeHandler}
-										shape="circular"
-										color="primary"
-									/>
-								</Box>
-							</Stack>
-						)}
-
-						<Stack className={'leave-review-config'}>
-							<Typography className={'main-title'}>Leave A Review</Typography>
-							<Typography className={'review-title'}>Review</Typography>
-							<textarea
-								onChange={({ target: { value } }: any) => {
-									setInsertCommentData({ ...insertCommentData, commentContent: value });
-								}}
-								value={insertCommentData.commentContent}
-							></textarea>
-							<Box className={'submit-btn'} component={'div'}>
-								<Button
-									className={'submit-review'}
-									disabled={insertCommentData.commentContent === '' || user?._id === ''}
-									onClick={createCommentHandler}
-								>
-									<Typography className={'title'}>Submit Review</Typography>
-									<svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 17 17" fill="none">
-										<g clipPath="url(#clip0_6975_3642)">
-											<path
-												d="M16.1571 0.5H6.37936C6.1337 0.5 5.93491 0.698792 5.93491 0.944458C5.93491 1.19012 6.1337 1.38892 6.37936 1.38892H15.0842L0.731781 15.7413C0.558156 15.915 0.558156 16.1962 0.731781 16.3698C0.818573 16.4566 0.932323 16.5 1.04603 16.5C1.15974 16.5 1.27345 16.4566 1.36028 16.3698L15.7127 2.01737V10.7222C15.7127 10.9679 15.9115 11.1667 16.1572 11.1667C16.4028 11.1667 16.6016 10.9679 16.6016 10.7222V0.944458C16.6016 0.698792 16.4028 0.5 16.1571 0.5Z"
-												fill="#181A20"
-											/>
-										</g>
-										<defs>
-											<clipPath id="clip0_6975_3642">
-												<rect width="16" height="16" fill="white" transform="translate(0.601562 0.5)" />
-											</clipPath>
-										</defs>
-									</svg>
-								</Button>
-							</Box>
-						</Stack>
-					</Stack>
-				</Stack>
-			</Stack>
+				</div>
+			</div>
 		);
 	}
 };
-
-AgentDetail.defaultProps = {
+CommunityDetail.defaultProps = {
 	initialInput: {
-		page: 1,
-		limit: 9,
-		search: {
-			memberId: '',
-		},
-	},
-	initialComment: {
 		page: 1,
 		limit: 5,
 		sort: 'createdAt',
-		direction: 'ASC',
-		search: {
-			commentRefId: '',
-		},
+		direction: 'DESC',
+		search: { commentRefId: '' },
 	},
 };
 
-export default withLayoutBasic(AgentDetail);
+export default withLayoutBasic(CommunityDetail);
