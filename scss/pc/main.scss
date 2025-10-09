@@ -71,10 +71,29 @@ body::-webkit-scrollbar {
 					flex-direction: row;
 					align-items: center;
 					justify-content: space-between;
+					
+					// Responsive container for different viewport sizes
+					@media (max-width: 1400px) {
+						padding: 0 30px;
+					}
+					
+					@media (max-width: 1200px) {
+						padding: 0 20px;
+					}
+					
 					.logo-box {
 						img {
 							width: 150px;
 							cursor: pointer;
+							
+							// Responsive logo sizing
+							@media (max-width: 1200px) {
+								width: 130px;
+							}
+							
+							@media (max-width: 1024px) {
+								width: 120px;
+							}
 						}
 					}
 					.router-box {
@@ -83,6 +102,19 @@ body::-webkit-scrollbar {
 						display: flex;
 						flex-direction: row;
 						justify-content: space-between;
+						
+						// Responsive navigation width
+						@media (max-width: 1400px) {
+							width: 550px;
+						}
+						
+						@media (max-width: 1200px) {
+							width: 480px;
+						}
+						
+						@media (max-width: 1024px) {
+							width: 400px;
+						}
 						div {
 							position: relative;
 							color: #eeeeeeed;
@@ -92,6 +124,15 @@ body::-webkit-scrollbar {
 							font-weight: 600;
 							line-height: normal;
 							cursor: pointer;
+							
+							// Responsive font sizing
+							@media (max-width: 1200px) {
+								font-size: 14px;
+							}
+							
+							@media (max-width: 1024px) {
+								font-size: 13px;
+							}
 							.community_menu {
 								position: absolute;
 								left: -177%;
@@ -120,6 +161,20 @@ body::-webkit-scrollbar {
 						display: flex;
 						flex-direction: row;
 						justify-content: flex-end;
+						
+						// Responsive user-box width
+						@media (max-width: 1400px) {
+							width: 250px;
+						}
+						
+						@media (max-width: 1200px) {
+							width: 220px;
+						}
+						
+						@media (max-width: 1024px) {
+							width: 200px;
+						}
+						
 						.join-box {
 							width: 184px;
 							height: 47px;
@@ -129,6 +184,17 @@ body::-webkit-scrollbar {
 							border-radius: 60px;
 							border: 1px solid #ffffff;
 							cursor: pointer;
+							
+							// Responsive join-box sizing
+							@media (max-width: 1200px) {
+								width: 160px;
+								height: 42px;
+							}
+							
+							@media (max-width: 1024px) {
+								width: 140px;
+								height: 38px;
+							}
 							svg {
 								color: #ffffff;
 								margin-right: 10px;
@@ -140,6 +206,15 @@ body::-webkit-scrollbar {
 								font-weight: 600;
 								line-height: normal;
 								color: #ffffff;
+								
+								// Responsive font sizing
+								@media (max-width: 1200px) {
+									font-size: 13px;
+								}
+								
+								@media (max-width: 1024px) {
+									font-size: 12px;
+								}
 							}
 						}
 						.login-user {

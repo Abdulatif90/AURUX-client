@@ -74,6 +74,11 @@ const withLayoutBasic = (Component: any) => {
 					desc = 'Home / For Rent';
 					bgImage = '/img/banner/header1.svg';
 					break;
+				case '/about':
+					title = 'ABOUT';
+					desc = 'Thank you for contacting us!';
+					bgImage = '/img/banner/2.jpg';
+					break;
 				default:
 					break;
 			}
