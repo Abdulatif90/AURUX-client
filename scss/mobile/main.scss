@@ -800,10 +800,35 @@
             .media-box {
               margin-top: 12px;
               color: #929495;
-              svg {
-                font-size: 32px;
+              
+              a {
+                text-decoration: none;
+                color: inherit;
+                display: inline-block;
                 margin-right: 22px;
+                transition: all 0.3s ease;
+                
+                &:hover {
+                  transform: translateY(-2px);
+                  
+                  .social-icon {
+                    color: #fff;
+                  }
+                }
+              }
+              
+              .social-icon {
+                font-size: 32px;
                 cursor: pointer;
+                transition: color 0.3s ease;
+              }
+              
+              // Individual icon hover colors
+              a:hover {
+                &:nth-child(1) .social-icon { color: #1877f2; } // Facebook blue
+                &:nth-child(2) .social-icon { color: #0088cc; } // Telegram blue  
+                &:nth-child(3) .social-icon { color: #e4405f; } // Instagram pink
+                &:nth-child(4) .social-icon { color: #1da1f2; } // Twitter blue
               }
             }
           }

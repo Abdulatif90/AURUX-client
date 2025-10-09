@@ -29,10 +29,18 @@ const Footer = () => {
 						<Box component={'div'} className={'footer-box'}>
 							<p>follow us on social media</p>
 							<div className={'media-box'}>
-								<FacebookOutlinedIcon />
-								<TelegramIcon />
-								<InstagramIcon />
-								<TwitterIcon />
+								<a href="https://facebook.com/" target="_blank" rel="noopener noreferrer">
+									<FacebookOutlinedIcon className="social-icon" />
+								</a>
+								<a href="https://t.me/" target="_blank" rel="noopener noreferrer">
+									<TelegramIcon className="social-icon" />
+								</a>
+								<a href="https://instagram.com/" target="_blank" rel="noopener noreferrer">
+									<InstagramIcon className="social-icon" />
+								</a>
+								<a href="https://twitter.com/" target="_blank" rel="noopener noreferrer">
+									<TwitterIcon className="social-icon" />
+								</a>
 							</div>
 						</Box>
 					</Stack>
@@ -88,10 +96,18 @@ const Footer = () => {
 						<Box component={'div'} className={'footer-box'}>
 							<p>follow us on social media</p>
 							<div className={'media-box'}>
-								<FacebookOutlinedIcon />
-								<TelegramIcon />
-								<InstagramIcon />
-								<TwitterIcon />
+								<a href="https://facebook.com/aurux" target="_blank" rel="noopener noreferrer">
+									<FacebookOutlinedIcon className="social-icon" />
+								</a>
+								<a href="https://t.me/aurux" target="_blank" rel="noopener noreferrer">
+									<TelegramIcon className="social-icon" />
+								</a>
+								<a href="https://instagram.com/aurux" target="_blank" rel="noopener noreferrer">
+									<InstagramIcon className="social-icon" />
+								</a>
+								<a href="https://twitter.com/aurux" target="_blank" rel="noopener noreferrer">
+									<TwitterIcon className="social-icon" />
+								</a>
 							</div>
 						</Box>
 					</Stack>
