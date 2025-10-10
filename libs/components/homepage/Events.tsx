@@ -67,7 +67,6 @@ const EventCard = ({ event }: { event: EventData }) => {
 
 const Events = () => {
 	const device = useDeviceDetect();
-
 	if (device === 'mobile') {
 		return <div>EVENT CARD</div>;
 	} else {
@@ -82,7 +81,8 @@ const Events = () => {
 					</Stack>
 					<Stack className={'card-wrapper'}>
 						{eventsData.map((event: EventData) => {
-							return <EventCard event={event} key={event?.eventTitle} />;
+							console.log('EVENT id', event?.eventTitle);
+							return <EventCard event={event} key={event?.imageSrc} />;
 						})}
 					</Stack>
 				</Stack>

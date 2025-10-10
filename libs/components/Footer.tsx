@@ -5,9 +5,30 @@ import TwitterIcon from '@mui/icons-material/Twitter';
 import useDeviceDetect from '../hooks/useDeviceDetect';
 import { Stack, Box } from '@mui/material';
 import moment from 'moment';
+import Swal from 'sweetalert2';
 
 const Footer = () => {
 	const device = useDeviceDetect();
+
+	const handleSubscribe = async () => {
+		await Swal.fire({
+			position: 'top-end',
+			icon: 'success',
+			title: 'Subscribed!',
+			text: 'Thank you for subscribing to our newsletter',
+			showConfirmButton: false,
+			timer: 2500,
+			timerProgressBar: true,
+			toast: true,
+			background: '#f8f9fa',
+			color: '#28a745',
+			iconColor: '#28a745',
+			customClass: {
+				popup: 'compact-alert',
+				title: 'compact-title'
+			}
+		});
+	};
 
 	if (device == 'mobile') {
 		return (
@@ -116,7 +137,7 @@ const Footer = () => {
 							<strong>keep yourself up to date</strong>
 							<div>
 								<input type="text" placeholder={'Your Email'} />
-								<span>Subscribe</span>
+								<span onClick={handleSubscribe}>Subscribe</span>
 							</div>
 						</Box>
 						<Box component={'div'} className={'bottom'}>
