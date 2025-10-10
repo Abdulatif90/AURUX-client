@@ -6,6 +6,8 @@ import { getMainDefinition } from '@apollo/client/utilities';
 import { onError } from '@apollo/client/link/error';
 import { getJwtToken } from '../libs/auth';
 import { TokenRefreshLink } from 'apollo-link-token-refresh';
+import { sweetErrorAlert } from '../libs/sweetAlert';
+import { socketVar } from './store';
 let apolloClient: ApolloClient<NormalizedCacheObject>;
 
 function getHeaders() {
@@ -27,6 +29,78 @@ const tokenRefreshLink = new TokenRefreshLink({
 	},
 });
 
+// Separate Chat WebSocket client (not for GraphQL)
+class ChatWebSocket {
+	private socket: WebSocket | null = null;
+	private reconnectAttempts: number = 0;
+	private maxReconnectAttempts: number = 5;
+	private reconnectDelay: number = 1000;
+	private url: string;
+
+	constructor(url: string) {
+		this.url = url;
+		this.connect();
+	}
+
+	private connect() {
+		try {
+			this.socket = new WebSocket(`${this.url}?token=${getJwtToken()}`);
+			socketVar(this.socket);
+
+			this.socket.onopen = () => {
+				console.log('Chat WebSocket connected!');
+				this.reconnectAttempts = 0;
+			};
+
+			this.socket.onmessage = (msg) => {
+				console.log('Chat WebSocket message:', msg.data);
+				// Handle chat-specific messages here
+			};
+
+			this.socket.onerror = (error) => {
+				console.log('Chat WebSocket error:', error);
+			};
+
+			this.socket.onclose = (event) => {
+				console.log('Chat WebSocket closed:', event.code, event.reason);
+				
+				// Auto-reconnect if not intentional close
+				if (event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
+					this.reconnectAttempts++;
+					setTimeout(() => {
+						console.log(`Chat WebSocket reconnecting (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
+						this.connect();
+					}, this.reconnectDelay * this.reconnectAttempts);
+				}
+			};
+		} catch (error) {
+			console.error('Failed to create chat WebSocket:', error);
+		}
+	}
+
+	send(message: string) {
+		if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+			this.socket.send(message);
+		} else {
+			console.warn('Chat WebSocket not connected');
+		}
+	}
+
+	close() {
+		if (this.socket) {
+			this.socket.close(1000, 'Manual close');
+		}
+	}
+}
+
+// Initialize chat WebSocket if needed
+let chatWebSocket: ChatWebSocket | null = null;
+if (typeof window !== 'undefined') {
+	// Only initialize if chat is needed
+	// chatWebSocket = new ChatWebSocket(process.env.NEXT_PUBLIC_CHAT_WS || 'ws://localhost:4000/chat');
+}
+
+
 function createIsomorphicLink() {
 	if (typeof window !== 'undefined') {
 		const authLink = new ApolloLink((operation, forward) => {
@@ -45,30 +119,39 @@ function createIsomorphicLink() {
 			uri: process.env.REACT_APP_API_GRAPHQL_URL || process.env.NEXT_PUBLIC_API_GRAPHQL_URL || 'http://localhost:4000/graphql'
 		});
 
-		/* WEBSOCKET SUBSCRIPTION LINK */
-		const wsLink = new WebSocketLink({	
-			uri: process.env.REACT_APP_API_WS_URL || process.env.NEXT_PUBLIC_API_WS || 'ws://localhost:4000/graphql',
-			options: {
-				reconnect: true, // Enable reconnection
-				timeout: 30000,
-				connectionParams: () => {
-					return { headers: getHeaders() };
-				},
-				reconnectionAttempts: 5,
-				lazy: true,
-			},
-		});
+		/* WEBSOCKET SUBSCRIPTION LINK - DISABLED TO PREVENT MESSAGE TYPE ERRORS */
+		// Temporarily disable WebSocket subscriptions to prevent "Invalid message type" errors
+		// The WebSocket server may not be properly implementing GraphQL subscription protocol
+		const wsLink = null;
+		
+		// const wsLink = new WebSocketLink({	
+		// 	uri: process.env.REACT_APP_API_WS_URL || process.env.NEXT_PUBLIC_API_WS || 'ws://localhost:4000/graphql',
+		// 	options: {
+		// 		reconnect: true,
+		// 		timeout: 30000,
+		// 		connectionParams: () => {
+		// 			return { headers: getHeaders() };
+		// 		},
+		// 		lazy: true,
+		// 		inactivityTimeout: 300000,
+		// 		connectionCallback: (error) => {
+		// 			if (error) {
+		// 				console.error('GraphQL WebSocket connection error:', error);
+		// 			} else {
+		// 				console.log('GraphQL WebSocket connected');
+		// 			}
+		// 		},
+		// 		reconnectionAttempts: 5,
+		// 	},
+		// 	// Use standard WebSocket for GraphQL subscriptions
+		// 	webSocketImpl: WebSocket,
+		// });
 
 		const errorLink = onError(({ graphQLErrors, networkError, response, operation, forward }) => {
 			if (graphQLErrors) {
-				graphQLErrors.map(({ message, locations, path, extensions }) => {
-					console.log(`[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`);
-					// Handle specific GraphQL errors that might cause router issues
-					if (extensions?.code === 'UNAUTHENTICATED') {
-						// Handle authentication errors
-						console.warn('Authentication error detected');
-					}
-				});
+				graphQLErrors.map(({ message, locations, path, extensions }) =>
+					console.log(`[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`),
+				);
 			}
 			if (networkError) {
 				console.log(`[Network error]: ${networkError}`);
@@ -90,7 +173,8 @@ function createIsomorphicLink() {
 				const definition = getMainDefinition(query);
 				return definition.kind === 'OperationDefinition' && definition.operation === 'subscription';
 			},
-			wsLink,
+			// Use HTTP link for subscriptions until WebSocket server is properly configured
+			authLink.concat(link), // wsLink disabled temporarily
 			authLink.concat(link),
 		);
 
@@ -103,9 +187,10 @@ function createApolloClient() {
 		ssrMode: typeof window === 'undefined',
 		link: createIsomorphicLink(),
 		cache: new InMemoryCache({
-			// Add cache configuration to prevent hydration issues
-			addTypename: true,
-			resultCaching: true,
+			// Removed deprecated options for Apollo Client 3.14.0
+			typePolicies: {
+				// Add type policies here if needed
+			},
 		}),
 		resolvers: {},
 		// Add default options to prevent loading cancellation
@@ -133,6 +218,9 @@ export function initializeApollo(initialState = null) {
 export function useApollo(initialState: any) {
 	return useMemo(() => initializeApollo(initialState), [initialState]);
 }
+
+// Export ChatWebSocket for use in components
+export { ChatWebSocket };
 
 /**
 import { ApolloClient, InMemoryCache, createHttpLink } from "@apollo/client";

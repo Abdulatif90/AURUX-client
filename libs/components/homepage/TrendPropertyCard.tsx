@@ -3,6 +3,7 @@ import { Stack, Box, Divider, Typography } from '@mui/material';
 import IconButton from '@mui/material/IconButton';
 import useDeviceDetect from '../../hooks/useDeviceDetect';
 import FavoriteIcon from '@mui/icons-material/Favorite';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import { Property } from '../../types/property/property';
 import RemoveRedEyeIcon from '@mui/icons-material/RemoveRedEye';
 import { REACT_APP_API_URL } from '../../config';
@@ -12,16 +13,22 @@ import { userVar } from '../../../apollo/store';
 
 interface TrendPropertyCardProps {
 	property: Property;
+	likePropertyHandler: any;
+	myFavorites?: boolean;
+	recentlyVisited?: boolean;
 }
 
 const TrendPropertyCard = (props: TrendPropertyCardProps) => {
-	const { property } = props;
+	const { property, likePropertyHandler, myFavorites, recentlyVisited } = props;
 	const device = useDeviceDetect();
 	const router = useRouter();
 	const user = useReactiveVar(userVar);
 
 	/** HANDLERS **/
-
+const pushDetailHandler = async (propertyId: string) => {
+		console.log('property id:', propertyId);
+		await router.push({ pathname: '/property/detail', query: { id: propertyId } });
+	};
 	if (device === 'mobile') {
 		return (
 			<Stack className="trend-card-box" key={property._id}>
@@ -29,11 +36,19 @@ const TrendPropertyCard = (props: TrendPropertyCardProps) => {
 					component={'div'}
 					className={'card-img'}
 					style={{ backgroundImage: `url(${REACT_APP_API_URL}/${property?.propertyImages[0]})` }}
+					onClick={() => { pushDetailHandler(property._id);
+					}}
 				>
 					<div>${property.propertyPrice}</div>
 				</Box>
 				<Box component={'div'} className={'info'}>
-					<strong className={'title'}>{property.propertyTitle}</strong>
+					<strong 
+						className={'title'}
+						onClick={() => { pushDetailHandler(property._id);
+					}}
+					>
+						{property.propertyTitle}
+					</strong>
 					<p className={'desc'}>{property.propertyDesc ?? 'no description'}</p>
 					<div className={'options'}>
 						<div>
@@ -60,12 +75,14 @@ const TrendPropertyCard = (props: TrendPropertyCardProps) => {
 								<RemoveRedEyeIcon />
 							</IconButton>
 							<Typography className="view-cnt">{property?.propertyViews}</Typography>
-							<IconButton color={'default'}>
-								{property?.meLiked && property?.meLiked[0]?.myFavorite ? (
-									<FavoriteIcon style={{ color: 'red' }} />
-								) : (
-									<FavoriteIcon />
-								)}
+							<IconButton color={'default'} onClick={() => likePropertyHandler(user, property._id)}>
+								{myFavorites ? (
+										<FavoriteIcon color="primary" />
+									) : property?.meLiked && property?.meLiked[0]?.myFavorite ? (
+										<FavoriteIcon color="primary" />
+									) : (
+										<FavoriteBorderIcon />
+									)}
 							</IconButton>
 							<Typography className="view-cnt">{property?.propertyLikes}</Typography>
 						</div>
@@ -80,11 +97,17 @@ const TrendPropertyCard = (props: TrendPropertyCardProps) => {
 					component={'div'}
 					className={'card-img'}
 					style={{ backgroundImage: `url(${REACT_APP_API_URL}/${property?.propertyImages[0]})` }}
+					onClick={() => { pushDetailHandler(property._id);
+					}}
 				>
 					<div>${property.propertyPrice}</div>
 				</Box>
 				<Box component={'div'} className={'info'}>
-					<strong className={'title'}>{property.propertyTitle}</strong>
+					<strong 
+						className={'title'}
+						onClick={() => { pushDetailHandler(property._id);
+						}}>{property.propertyTitle}
+					</strong>
 					<p className={'desc'}>{property.propertyDesc ?? 'no description'}</p>
 					<div className={'options'}>
 						<div>
@@ -111,7 +134,7 @@ const TrendPropertyCard = (props: TrendPropertyCardProps) => {
 								<RemoveRedEyeIcon />
 							</IconButton>
 							<Typography className="view-cnt">{property?.propertyViews}</Typography>
-							<IconButton color={'default'}>
+							<IconButton color={'default'} onClick={() => likePropertyHandler(user, property._id)}>
 								{property?.meLiked && property?.meLiked[0]?.myFavorite ? (
 									<FavoriteIcon style={{ color: 'red' }} />
 								) : (

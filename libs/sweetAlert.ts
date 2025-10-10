@@ -82,6 +82,19 @@ export const sweetMixinErrorAlert = async (msg: string, duration: number = 3000)
 		title: msg,
 		showConfirmButton: false,
 		timer: duration,
+		background: '#fff',
+		color: '#333',
+		iconColor: '#e92C28',
+		showClass: {
+			popup: 'animate__animated animate__fadeInDown animate__faster',
+		},
+		hideClass: {
+			popup: 'animate__animated animate__fadeOutUp animate__faster',
+		},
+		customClass: {
+			popup: 'custom-swal-popup',
+			title: 'custom-swal-title',
+		},
 	});
 };
 
@@ -91,6 +104,19 @@ export const sweetMixinSuccessAlert = async (msg: string, duration: number = 200
 		title: msg,
 		showConfirmButton: false,
 		timer: duration,
+		background: '#fff',
+		color: '#333',
+		iconColor: '#28a745',
+		showClass: {
+			popup: 'animate__animated animate__fadeInDown animate__faster',
+		},
+		hideClass: {
+			popup: 'animate__animated animate__fadeOutUp animate__faster',
+		},
+		customClass: {
+			popup: 'custom-swal-popup',
+			title: 'custom-swal-title',
+		},
 	});
 };
 

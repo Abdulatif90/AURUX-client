@@ -24,24 +24,26 @@ const About: NextPage = () => {
 								easier than it sounds.
 								<br />
 								<br />
-								Maecenas quis viverra metus, et efficitur ligula. Nam congue augue et ex congue, sed luctus lectus
-								congue. Integer convallis condimentum sem. Duis elementum tortor eget condimentum tempor. Praesent
-								sollicitudin lectus ut pharetra pulvinar.
+								Our goal is to redefine real estate by making it more transparent, innovative, 
+								and accessible for everyone. We believe that by leveraging technology and data,
+								we can create a more efficient and user-friendly experience for buyers, sellers,
+								 and renters alike.
+								<br />
 							</p>
 							<Stack className={'boxes'}>
 								<div className={'box'}>
 									<div>
 										<img src="/img/icons/garden.svg" alt="" />
 									</div>
-									<span>Modern Villa</span>
-									<p>Nullam sollicitudin blandit Nullam maximus.</p>
+										<span>Modern Villas</span>
+									<p>comfort, elegance, and smart living.</p>
 								</div>
 								<div className={'box'}>
 									<div>
 										<img src="/img/icons/securePayment.svg" alt="" />
 									</div>
 									<span>Secure Payment</span>
-									<p>Nullam sollicitudin blandit Nullam maximus.</p>
+									<p>fast, transparent, and fully secure transactions</p>
 								</div>
 							</Stack>
 						</Stack>
@@ -71,7 +73,7 @@ const About: NextPage = () => {
 				<Stack className={'agents'}>
 					<Stack className={'container'}>
 						<span className={'title'}>Our Exclusive Agetns</span>
-						<p className={'desc'}>Aliquam lacinia diam quis lacus euismod</p>
+						<p className={'desc'}>Meet our trusted professionals — dedicated to finding your dream property.</p>
 						<Stack className={'wrap'}>
 							{/*{[1, 2, 3, 4, 5].map(() => {*/}
 							{/*	return <AgentCard />;*/}
@@ -89,7 +91,7 @@ const About: NextPage = () => {
 							</div>
 							<div className={'text-box'}>
 								<span>Property Management</span>
-								<p>Nullam sollicitudin blandit eros eu pretium. Nullam maximus ultricies auctor.</p>
+								<p> keeps your property</p>
 							</div>
 						</Stack>
 						<Stack>
@@ -98,7 +100,7 @@ const About: NextPage = () => {
 							</div>
 							<div className={'text_-box'}>
 								<span>Property Management</span>
-								<p>Nullam sollicitudin blandit eros eu pretium. Nullam maximus ultricies auctor.</p>
+								<p>Expert management that keeps your property running smoothly.</p>
 							</div>
 						</Stack>
 						<Stack>
@@ -107,7 +109,7 @@ const About: NextPage = () => {
 							</div>
 							<div className={'text-box'}>
 								<span>Property Management</span>
-								<p>Nullam sollicitudin blandit eros eu pretium. Nullam maximus ultricies auctor.</p>
+								<p>Hassle-free property management you can trust.</p>
 							</div>
 						</Stack>
 						<Stack className={'btn'}>
@@ -118,7 +120,7 @@ const About: NextPage = () => {
 				</Stack>
 				<Stack className={'partners'}>
 					<Stack className={'container'}>
-						<span>Trusted bu the world's best</span>
+						<span>Trusted by the world's best</span>
 						<Stack className={'wrap'}>
 							<img src="/img/icons/brands/amazon.svg" alt="" />
 							<img src="/img/icons/brands/amd.svg" alt="" />
@@ -141,7 +143,7 @@ const About: NextPage = () => {
 							</div>
 							<div className={'black'}>
 								<img src="/img/icons/call.svg" alt="" />
-								920 851 9087
+								01076226662
 							</div>
 						</Box>
 					</Stack>

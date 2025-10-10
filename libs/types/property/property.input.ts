@@ -11,6 +11,7 @@ export interface PropertyInput {
 	propertyBeds: number;
 	propertyRooms: number;
 	propertyImages: string[];
+	propertyStatus: PropertyStatus;
 	propertyDesc?: string;
 	propertyBarter?: boolean;
 	propertyRent?: boolean;

@@ -57,17 +57,43 @@ body::-webkit-scrollbar {
 				z-index: 99;
 				align-items: center;
 				border-top: 1px solid rgba(255, 255, 255, 0.07);
+				background: rgba(24, 26, 32, 0.85);
+				backdrop-filter: blur(10px);
+				-webkit-backdrop-filter: blur(10px);
+				transition: all 0.3s ease;
+				
 				&.transparent {
-					background-color: #181a209e;
+					background-color: rgba(24, 26, 32, 0.95);
+					backdrop-filter: blur(15px);
+					-webkit-backdrop-filter: blur(15px);
 				}
 				.container {
 					flex-direction: row;
 					align-items: center;
 					justify-content: space-between;
+					
+					// Responsive container for different viewport sizes
+					@media (max-width: 1400px) {
+						padding: 0 30px;
+					}
+					
+					@media (max-width: 1200px) {
+						padding: 0 20px;
+					}
+					
 					.logo-box {
 						img {
 							width: 150px;
 							cursor: pointer;
+							
+							// Responsive logo sizing
+							@media (max-width: 1200px) {
+								width: 130px;
+							}
+							
+							@media (max-width: 1024px) {
+								width: 120px;
+							}
 						}
 					}
 					.router-box {
@@ -76,6 +102,19 @@ body::-webkit-scrollbar {
 						display: flex;
 						flex-direction: row;
 						justify-content: space-between;
+						
+						// Responsive navigation width
+						@media (max-width: 1400px) {
+							width: 550px;
+						}
+						
+						@media (max-width: 1200px) {
+							width: 480px;
+						}
+						
+						@media (max-width: 1024px) {
+							width: 400px;
+						}
 						div {
 							position: relative;
 							color: #eeeeeeed;
@@ -85,6 +124,15 @@ body::-webkit-scrollbar {
 							font-weight: 600;
 							line-height: normal;
 							cursor: pointer;
+							
+							// Responsive font sizing
+							@media (max-width: 1200px) {
+								font-size: 14px;
+							}
+							
+							@media (max-width: 1024px) {
+								font-size: 13px;
+							}
 							.community_menu {
 								position: absolute;
 								left: -177%;
@@ -113,6 +161,20 @@ body::-webkit-scrollbar {
 						display: flex;
 						flex-direction: row;
 						justify-content: flex-end;
+						
+						// Responsive user-box width
+						@media (max-width: 1400px) {
+							width: 250px;
+						}
+						
+						@media (max-width: 1200px) {
+							width: 220px;
+						}
+						
+						@media (max-width: 1024px) {
+							width: 200px;
+						}
+						
 						.join-box {
 							width: 184px;
 							height: 47px;
@@ -122,6 +184,17 @@ body::-webkit-scrollbar {
 							border-radius: 60px;
 							border: 1px solid #ffffff;
 							cursor: pointer;
+							
+							// Responsive join-box sizing
+							@media (max-width: 1200px) {
+								width: 160px;
+								height: 42px;
+							}
+							
+							@media (max-width: 1024px) {
+								width: 140px;
+								height: 38px;
+							}
 							svg {
 								color: #ffffff;
 								margin-right: 10px;
@@ -133,6 +206,15 @@ body::-webkit-scrollbar {
 								font-weight: 600;
 								line-height: normal;
 								color: #ffffff;
+								
+								// Responsive font sizing
+								@media (max-width: 1200px) {
+									font-size: 13px;
+								}
+								
+								@media (max-width: 1024px) {
+									font-size: 12px;
+								}
 							}
 						}
 						.login-user {
@@ -177,11 +259,14 @@ body::-webkit-scrollbar {
 		height: 860px;
 		background-image: url('/img/banner/header1.svg');
 		background-size: cover;
+		justify-content: flex-end;
+		align-items: center;
 		.container {
 			position: relative;
 			margin-top: 20px;
 			flex-direction: column;
 			align-items: center;
+			margin-bottom: 20px;
 			.search-box {
 				position: relative;
 				margin-top: 56px;
@@ -224,6 +309,9 @@ body::-webkit-scrollbar {
 							line-height: 26px;
 						}
 						svg {
+							width: 20px;
+							height: 20px;
+							color: #ffffff;
 						}
 					}
 				}
@@ -585,7 +673,7 @@ body::-webkit-scrollbar {
 					width: 100%;
 					display: flex;
 					flex-direction: column;
-					.msg-left {
+					.welcome {
 						margin-left: 10px;
 						padding: 9px;
 						width: auto;
@@ -594,6 +682,35 @@ body::-webkit-scrollbar {
 						background: #9fa7ac;
 						border-radius: 20px 20px 20px 0px;
 						color: #fff;
+					}
+					.msg-left {
+						margin: 10px 0px 10px 10px;
+						padding: 9px;
+						width: auto;
+						height: auto;
+						display: flex;
+						background: #ffffff;
+						border-radius: 20px 20px 20px 0px;
+						color: #333;
+						max-width: 280px;
+						word-wrap: break-word;
+						box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+					}
+					.msg-right {
+						padding: 9px;
+						width: auto;
+						height: auto;
+						display: flex;
+						background: #d0ece8;
+						border-radius: 20px 20px 0px 20px;
+						color: #333;
+						max-width: 280px;
+						word-wrap: break-word;
+						margin-left: auto;
+						margin-right: 10px;
+						margin-top: 10px;
+						margin-bottom: 10px;
+						box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
 					}
 				}
 			}
@@ -631,15 +748,17 @@ body::-webkit-scrollbar {
 					border-radius: 50%;
 					background: #33c1c1;
 					border: none;
+					transition: all 0.3s ease;
+					&:hover {
+						background: #2ba8a8;
+						transform: scale(1.05);
+					}
+					&:disabled {
+						background: #cccccc;
+						cursor: not-allowed;
+						transform: none;
+					}
 				}
-			}
-			.msg-right {
-				padding: 9px;
-				width: auto;
-				height: auto;
-				display: flex;
-				background: #d0ece8;
-				border-radius: 20px 20px 0px 20px;
 			}
 		}
 	}
@@ -693,10 +812,35 @@ body::-webkit-scrollbar {
 						.media-box {
 							margin-top: 12px;
 							color: #929495;
-							svg {
-								font-size: 32px;
+							
+							a {
+								text-decoration: none;
+								color: inherit;
+								display: inline-block;
 								margin-right: 22px;
+								transition: all 0.3s ease;
+								
+								&:hover {
+									transform: translateY(-3px);
+									
+									.social-icon {
+										color: #fff;
+									}
+								}
+							}
+							
+							.social-icon {
+								font-size: 32px;
 								cursor: pointer;
+								transition: color 0.3s ease;
+							}
+							
+							// Individual icon hover colors
+							a:hover {
+								&:nth-child(1) .social-icon { color: #1877f2; } // Facebook blue
+								&:nth-child(2) .social-icon { color: #0088cc; } // Telegram blue  
+								&:nth-child(3) .social-icon { color: #e4405f; } // Instagram pink
+								&:nth-child(4) .social-icon { color: #1da1f2; } // Twitter blue
 							}
 						}
 					}
@@ -1046,3 +1190,4 @@ body::-webkit-scrollbar {
 	border-radius: 2px;
 	margin-right: 8px;
 }
+

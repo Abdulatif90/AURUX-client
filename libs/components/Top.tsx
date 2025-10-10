@@ -190,6 +190,10 @@ const Top = () => {
 							<Link href={'/cs'}>
 								<div> {t('CS')} </div>
 							</Link>
+
+							<Link href={'/about'}>
+								<div> {t('About Us')} </div>
+							</Link>
 						</Box>
 						<Box component={'div'} className={'user-box'}>
 							{user?._id ? (
@@ -200,6 +204,7 @@ const Top = () => {
 												user?.memberImage ? `${REACT_APP_API_URL}/${user?.memberImage}` : '/img/profile/defaultUser.svg'
 											}
 											alt=""
+											key={user?.memberImage} // Force re-render when image changes
 										/>
 									</div>
 
@@ -212,7 +217,7 @@ const Top = () => {
 										}}
 										sx={{ mt: '5px' }}
 									>
-										<MenuItem onClick={() => logOut()}>
+										<MenuItem onClick={async () => await logOut()}>
 											<Logout fontSize="small" style={{ color: 'blue', marginRight: '10px' }} />
 											Logout
 										</MenuItem>

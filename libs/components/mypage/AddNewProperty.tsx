@@ -2,14 +2,16 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/router';
 import { Button, Stack, Typography } from '@mui/material';
 import useDeviceDetect from '../../hooks/useDeviceDetect';
-import { PropertyLocation, PropertyType } from '../../enums/property.enum';
+import { PropertyLocation, PropertyStatus, PropertyType } from '../../enums/property.enum';
 import { REACT_APP_API_URL, propertySquare } from '../../config';
 import { PropertyInput } from '../../types/property/property.input';
 import axios from 'axios';
-import { getJwtToken } from '../../auth';
-import { sweetMixinErrorAlert } from '../../sweetAlert';
-import { useReactiveVar } from '@apollo/client';
+import { getJwtToken, isTokenValid } from '../../auth';
+import { sweetErrorHandling, sweetMixinErrorAlert, sweetMixinSuccessAlert } from '../../sweetAlert';
+import { useMutation, useQuery, useReactiveVar } from '@apollo/client';
 import { userVar } from '../../../apollo/store';
+import { CREATE_PROPERTY, UPDATE_PROPERTY } from '../../../apollo/user/mutation';
+import { GET_PROPERTIES, GET_PROPERTY } from '../../../apollo/user/query';
 
 const AddProperty = ({ initialValues, ...props }: any) => {
 	const device = useDeviceDetect();
@@ -18,11 +20,22 @@ const AddProperty = ({ initialValues, ...props }: any) => {
 	const [insertPropertyData, setInsertPropertyData] = useState<PropertyInput>(initialValues);
 	const [propertyType, setPropertyType] = useState<PropertyType[]>(Object.values(PropertyType));
 	const [propertyLocation, setPropertyLocation] = useState<PropertyLocation[]>(Object.values(PropertyLocation));
-	const token = getJwtToken();
 	const user = useReactiveVar(userVar);
 
 	/** APOLLO REQUESTS **/
-	let getPropertyData: any, getPropertyLoading: any;
+	const [createProperty] = useMutation(CREATE_PROPERTY);
+	const [updateProperty] = useMutation(UPDATE_PROPERTY);
+	const {
+		loading: getPropertyLoading,
+		data: getPropertyData,
+		error: getPropertyError,
+		refetch: getPropertyRefetch,
+	} = useQuery(GET_PROPERTY, {
+		fetchPolicy: 'network-only',
+		variables: {
+			input: router.query.propertyId,
+		},
+	});
 
 	/** LIFECYCLES **/
 	useEffect(() => {
@@ -40,17 +53,36 @@ const AddProperty = ({ initialValues, ...props }: any) => {
 			propertySquare: getPropertyData?.getProperty ? getPropertyData?.getProperty?.propertySquare : 0,
 			propertyDesc: getPropertyData?.getProperty ? getPropertyData?.getProperty?.propertyDesc : '',
 			propertyImages: getPropertyData?.getProperty ? getPropertyData?.getProperty?.propertyImages : [],
+			propertyStatus: getPropertyData?.getProperty ? getPropertyData?.getProperty?.propertyStatus : PropertyStatus.ACTIVE,
 		});
 	}, [getPropertyLoading, getPropertyData]);
 
 	/** HANDLERS **/
 	async function uploadImages() {
 		try {
+			// Token'ni har safar dinamik olamiz
+			const token = getJwtToken();
+			
+			if (!token || token === '') {
+				await sweetMixinErrorAlert('Please log in to upload images.');
+				await router.push('/account/join');
+				return;
+			}
+			
+			if (!isTokenValid()) {
+				await sweetMixinErrorAlert('Your session has expired. Please log in again.');
+				localStorage.removeItem('accessToken');
+				await router.push('/account/join');
+				return;
+			}
+			
+			console.log('✅ Token tekshirildi va amal qilmoqda');
+			
 			const formData = new FormData();
 			const selectedFiles = inputRef.current.files;
 
 			if (selectedFiles.length == 0) return false;
-			if (selectedFiles.length > 5) throw new Error('Cannot upload more than 5 images!');
+			if (selectedFiles.length > 5) throw new Error('You can upload a maximum of 5 images.');
 
 			formData.append(
 				'operations',
@@ -88,23 +120,31 @@ const AddProperty = ({ initialValues, ...props }: any) => {
 
 			const responseImages = response.data.data.imagesUploader;
 
-			console.log('+responseImages: ', responseImages);
+			console.log('✅ Rasmlar yuklandi:', responseImages);
 			setInsertPropertyData({ ...insertPropertyData, propertyImages: responseImages });
+			await sweetMixinSuccessAlert('Images have been uploaded successfully');
 		} catch (err: any) {
-			console.log('err: ', err.message);
-			await sweetMixinErrorAlert(err.message);
+			console.error('❌ Upload xatolik:', err);
+			console.error('Error response:', err.response?.data);
+			
+			let errorMessage = 'Error occurred while uploading images';
+			if (err.response?.data?.errors) {
+				errorMessage = err.response.data.errors[0]?.message || errorMessage;
+			} else if (err.message) {
+				errorMessage = err.message;
+			}
+			
+			await sweetMixinErrorAlert(errorMessage);
 		}
 	}
 
 	const doDisabledCheck = () => {
 		if (
 			insertPropertyData.propertyTitle === '' ||
-			insertPropertyData.propertyPrice === 0 || // @ts-ignore
-			insertPropertyData.propertyType === '' || // @ts-ignore
-			insertPropertyData.propertyLocation === '' || // @ts-ignore
-			insertPropertyData.propertyAddress === '' || // @ts-ignore
-			insertPropertyData.propertyBarter === '' || // @ts-ignore
-			insertPropertyData.propertyRent === '' ||
+			insertPropertyData.propertyPrice === 0 ||
+			!insertPropertyData.propertyType ||
+			!insertPropertyData.propertyLocation ||
+			insertPropertyData.propertyAddress === '' ||
 			insertPropertyData.propertyRooms === 0 ||
 			insertPropertyData.propertyBeds === 0 ||
 			insertPropertyData.propertySquare === 0 ||
@@ -113,11 +153,72 @@ const AddProperty = ({ initialValues, ...props }: any) => {
 		) {
 			return true;
 		}
+		return false;
 	};
 
-	const insertPropertyHandler = useCallback(async () => {}, [insertPropertyData]);
+	const insertPropertyHandler = useCallback(async () => {
+		try {
+			// Validate and clean the data before sending
+			const cleanedData = {
+				propertyTitle: insertPropertyData.propertyTitle,
+				propertyPrice: insertPropertyData.propertyPrice,
+				propertyType: insertPropertyData.propertyType as PropertyType,
+				propertyLocation: insertPropertyData.propertyLocation as PropertyLocation,
+				propertyAddress: insertPropertyData.propertyAddress,
+				propertyBarter: insertPropertyData.propertyBarter,
+				propertyRent: insertPropertyData.propertyRent,
+				propertyRooms: insertPropertyData.propertyRooms,
+				propertyBeds: insertPropertyData.propertyBeds,
+				propertySquare: insertPropertyData.propertySquare,
+				propertyDesc: insertPropertyData.propertyDesc,
+				propertyImages: insertPropertyData.propertyImages,
+				propertyStatus: PropertyStatus.ACTIVE,
+			};
+			
+			console.log('Sending property data:', cleanedData);
+			
+			const result = await createProperty({
+				variables: {
+					input: cleanedData,
+				},
+			});
+			await sweetMixinSuccessAlert('This property has been created successfully ');
+			await router.push({
+				pathname: '/mypage',
+				query: {
+					category: 'myProperties',
+				},
+			});
+		} catch (err: any) {
+			console.error('Create property error:', err);
+			sweetErrorHandling(err).then();
+		}
+	}, [insertPropertyData]);
 
-	const updatePropertyHandler = useCallback(async () => {}, [insertPropertyData]);
+	const updatePropertyHandler = useCallback(async () => {
+		try {
+			// Create update data with the existing property ID
+			const updateData = {
+				...insertPropertyData,
+				_id: getPropertyData?.getProperty?._id,
+			};
+			
+			const result = await updateProperty({
+				variables: {
+					input: updateData,
+				},
+			});
+			await sweetMixinSuccessAlert('This property has been updated succeefully');
+			await router.push({
+				pathname: '/mypage',
+				query: {
+					category: 'myProperties',
+				},
+			});
+		} catch (err: any) {
+			sweetErrorHandling(err).then();
+		}
+	}, [insertPropertyData, getPropertyData?.getProperty?._id]);
 
 	if (user?.memberType !== 'AGENT') {
 		router.back();
@@ -398,6 +499,7 @@ const AddProperty = ({ initialValues, ...props }: any) => {
 								</svg>
 								<Stack className="text-box">
 									<Typography className="drag-title">Drag and drop images here</Typography>
+									<Typography className="drag-title">Please, 5 images required!!!</Typography>
 									<Typography className="format-title">Photos must be JPEG or PNG format and least 2048x768</Typography>
 								</Stack>
 								<Button
@@ -474,6 +576,7 @@ AddProperty.defaultProps = {
 		propertySquare: 0,
 		propertyDesc: '',
 		propertyImages: [],
+		propertyStatus: PropertyStatus.ACTIVE,
 	},
 };
 

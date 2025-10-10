@@ -10,30 +10,30 @@ interface EventData {
 }
 const eventsData: EventData[] = [
 	{
-		eventTitle: 'Paradise City Theme Park',
-		city: 'Incheon',
+		eventTitle: '',
+		city: '',
 		description:
-			'Experience magic and wonder in Incheon with a visit to the night-themed indoor theme park Wonderbox at Paradise City!',
-		imageSrc: '/img/events/INCHEON.webp',
+			'',
+		imageSrc: '/img/events/5.jpg',
 	},
 	{
-		eventTitle: 'Taebaeksan Snow Festival',
-		city: 'Seoul',
-		description: 'If you have the opportunity to travel to South Korea, do not miss the Taebaeksan Snow Festival!',
-		imageSrc: '/img/events/SEOUL.webp',
+		eventTitle: '',
+		city: '',
+		description: '',
+		imageSrc: '/img/events/2.jpg',
 	},
 	{
-		eventTitle: 'Suseong Lake Event',
-		city: 'Daegu',
-		description: 'The Suseong Lake Festival is a culture and arts festival held alongside Suseongmot Lake!',
-		imageSrc: '/img/events/DAEGU.webp',
+		eventTitle: '',
+		city: '',
+		description: '',
+		imageSrc: '/img/events/3.jpg',
 	},
 	{
-		eventTitle: 'Sand Festival',
-		city: 'Busan',
+		eventTitle: '',
+		city: '',
 		description:
-			'Haeundae Sand Festival, the nation’s largest eco-friendly exhibition on sand, is held at Haeundae Beach!',
-		imageSrc: '/img/events/BUSAN.webp',
+			'',
+		imageSrc: '/img/events/4.jpg',
 	},
 ];
 
@@ -67,7 +67,6 @@ const EventCard = ({ event }: { event: EventData }) => {
 
 const Events = () => {
 	const device = useDeviceDetect();
-
 	if (device === 'mobile') {
 		return <div>EVENT CARD</div>;
 	} else {
@@ -82,7 +81,8 @@ const Events = () => {
 					</Stack>
 					<Stack className={'card-wrapper'}>
 						{eventsData.map((event: EventData) => {
-							return <EventCard event={event} key={event?.eventTitle} />;
+							console.log('EVENT id', event?.eventTitle);
+							return <EventCard event={event} key={event?.imageSrc} />;
 						})}
 					</Stack>
 				</Stack>

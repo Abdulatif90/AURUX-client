@@ -47,6 +47,24 @@ hr {
 	margin: auto;
 }
 
+/** CUSTOM SWEETALERT STYLES **/
+.custom-swal-popup {
+	border-radius: 16px !important;
+	padding: 30px !important;
+	box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15) !important;
+}
+
+.custom-swal-title {
+	font-size: 18px !important;
+	font-weight: 500 !important;
+	color: #333 !important;
+	margin-top: 10px !important;
+}
+
+.swal2-icon {
+	margin: 20px auto 10px !important;
+}
+
 /** VERSION: PC **/
 #pc-wrap {
 	width: 100%;

@@ -9,6 +9,13 @@ import AgentCard from '../../libs/components/common/AgentCard';
 import { useRouter } from 'next/router';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { Member } from '../../libs/types/member/member';
+import { useMutation, useQuery } from '@apollo/client';
+import { LIKE_TARGET_MEMBER, LIKE_TARGET_PROPERTY } from '../../apollo/user/mutation';
+import { GET_AGENTS, GET_PROPERTIES } from '../../apollo/user/query';
+import { T } from '../../libs/types/common';
+import { Message } from '../../libs/enums/common.enum';
+import { Messages } from '../../libs/config';
+import { sweetMixinErrorAlert, sweetTopSmallSuccessAlert } from '../../libs/sweetAlert';
 
 export const getStaticProps = async ({ locale }: any) => ({
 	props: {
@@ -16,7 +23,7 @@ export const getStaticProps = async ({ locale }: any) => ({
 	},
 });
 
-const AgentList: NextPage = ({ initialInput, ...props }: any) => {
+const AgentList: NextPage = ({ initialInput, ...props }: any): JSX.Element => {
 	const device = useDeviceDetect();
 	const router = useRouter();
 	const [anchorEl2, setAnchorEl2] = useState<null | HTMLElement>(null);
@@ -32,6 +39,23 @@ const AgentList: NextPage = ({ initialInput, ...props }: any) => {
 	const [searchText, setSearchText] = useState<string>('');
 
 	/** APOLLO REQUESTS **/
+
+const [likeTargetMember] = useMutation(LIKE_TARGET_MEMBER);
+const {
+		loading: getAgentsLoading,
+		data: getAgentsData,
+		error: getAgentsError,
+		refetch: getAgentsRefetch,
+	} = useQuery(GET_AGENTS, {
+		fetchPolicy: 'network-only',
+		variables: { input: searchFilter },
+		notifyOnNetworkStatusChange: true,
+		onCompleted: (data: T) => {
+			setAgents(data?.getAgents?.list);
+			setTotal(data?.getAgents?.metaCounter[0]?.total);
+		},
+	});
+
 	/** LIFECYCLES **/
 	useEffect(() => {
 		if (router.query.input) {
@@ -85,10 +109,31 @@ const AgentList: NextPage = ({ initialInput, ...props }: any) => {
 		setCurrentPage(value);
 	};
 
+const likeMemberHandler = async (user: any, id: string) => {
+	try {
+		if (!id) return;
+		if (!user._id) throw new Error(Messages.error2);
+
+		await likeTargetMember({
+			variables: { input: id },
+		});
+
+		await getAgentsRefetch({ input: searchFilter });
+
+		await sweetTopSmallSuccessAlert('success', 800);
+	} catch (error: any) {
+		console.error(error.message);
+		await sweetMixinErrorAlert(error.message).then();
+	}
+};
+
 	if (device === 'mobile') {
 		return <h1>AGENTS PAGE MOBILE</h1>;
-	} else {
-		return (
+	}
+	if (device === 'mobile') {
+		return <h1>AGENTS PAGE MOBILE</h1>;
+	}
+	return (
 			<Stack className={'agent-list-page'}>
 				<Stack className={'container'}>
 					<Stack className={'filter'}>
@@ -139,7 +184,7 @@ const AgentList: NextPage = ({ initialInput, ...props }: any) => {
 							</div>
 						) : (
 							agents.map((agent: Member) => {
-								return <AgentCard agent={agent} key={agent._id} />;
+								return <AgentCard agent={agent} key={agent._id} likeMemberHandler={likeMemberHandler} />;
 							})
 						)}
 					</Stack>
@@ -168,7 +213,7 @@ const AgentList: NextPage = ({ initialInput, ...props }: any) => {
 			</Stack>
 		);
 	}
-};
+
 
 AgentList.defaultProps = {
 	initialInput: {
