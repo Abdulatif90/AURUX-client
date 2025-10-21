@@ -48,3 +48,5 @@ next-env.d.ts
 # DOCKER
 docker-compose.yaml
 .next
+
+deploy.ah
