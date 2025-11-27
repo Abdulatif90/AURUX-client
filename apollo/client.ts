@@ -116,13 +116,13 @@ function createIsomorphicLink() {
 
 		// @ts-ignore
 		const link = new createUploadLink({
-			uri: process.env.REACT_APP_API_GRAPHQL_URL || 'http://localhost:4001/graphql'
+			uri: process.env.REACT_APP_API_GRAPHQL_URL || 'http://31.97.70.220:4001/graphql'
 		});
 
 		/* WEBSOCKET SUBSCRIPTION LINK - CONFIGURED FOR BACKEND */
 		// WebSocket subscriptions for real-time updates
 		const wsLink = new WebSocketLink({	
-			uri: process.env.REACT_APP_API_WS_URL || process.env.REACT_APP_API_WS || 'ws://localhost:4001',
+			uri: process.env.REACT_APP_API_WS_URL || process.env.REACT_APP_API_WS || 'ws://31.97.70.220:4001',
 			options: {
 				reconnect: true,
 				timeout: 30000,

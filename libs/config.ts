@@ -1,4 +1,4 @@
-export const REACT_APP_API_URL = `${process.env.REACT_APP_API_URL}`;
+export const REACT_APP_API_URL = process.env.REACT_APP_API_URL || 'http://31.97.70.220:4001';
 
 export const availableOptions = ['propertyBarter', 'propertyRent'];
 
