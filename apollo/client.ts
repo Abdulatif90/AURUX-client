@@ -116,36 +116,38 @@ function createIsomorphicLink() {
 
 		// @ts-ignore
 		const link = new createUploadLink({
-			uri: process.env.REACT_APP_API_GRAPHQL_URL || process.env.NEXT_PUBLIC_API_GRAPHQL_URL || 'http://localhost:4000/graphql'
+			uri: process.env.REACT_APP_API_GRAPHQL_URL || 'http://localhost:4001/graphql'
 		});
 
-		/* WEBSOCKET SUBSCRIPTION LINK - DISABLED TO PREVENT MESSAGE TYPE ERRORS */
-		// Temporarily disable WebSocket subscriptions to prevent "Invalid message type" errors
-		// The WebSocket server may not be properly implementing GraphQL subscription protocol
-		const wsLink = null;
-		
-		// const wsLink = new WebSocketLink({	
-		// 	uri: process.env.REACT_APP_API_WS_URL || process.env.NEXT_PUBLIC_API_WS || 'ws://localhost:4000/graphql',
-		// 	options: {
-		// 		reconnect: true,
-		// 		timeout: 30000,
-		// 		connectionParams: () => {
-		// 			return { headers: getHeaders() };
-		// 		},
-		// 		lazy: true,
-		// 		inactivityTimeout: 300000,
-		// 		connectionCallback: (error) => {
-		// 			if (error) {
-		// 				console.error('GraphQL WebSocket connection error:', error);
-		// 			} else {
-		// 				console.log('GraphQL WebSocket connected');
-		// 			}
-		// 		},
-		// 		reconnectionAttempts: 5,
-		// 	},
-		// 	// Use standard WebSocket for GraphQL subscriptions
-		// 	webSocketImpl: WebSocket,
-		// });
+		/* WEBSOCKET SUBSCRIPTION LINK - CONFIGURED FOR BACKEND */
+		// WebSocket subscriptions for real-time updates
+		const wsLink = new WebSocketLink({	
+			uri: process.env.REACT_APP_API_WS_URL || process.env.REACT_APP_API_WS || 'ws://localhost:4001',
+			options: {
+				reconnect: true,
+				timeout: 30000,
+				connectionParams: () => {
+					const token = getJwtToken();
+					return { 
+						Authorization: token ? `Bearer ${token}` : '',
+						token: token || ''
+					};
+				},
+				lazy: true,
+				inactivityTimeout: 300000,
+				connectionCallback: (error) => {
+					if (error) {
+						console.error('GraphQL WebSocket connection error:', error);
+					} else {
+						console.log('GraphQL WebSocket connected successfully');
+					}
+				},
+				reconnectionAttempts: 5,
+				minTimeout: 1000,
+			},
+			// Use standard WebSocket for GraphQL subscriptions
+			webSocketImpl: WebSocket,
+		});
 
 		const errorLink = onError(({ graphQLErrors, networkError, response, operation, forward }) => {
 			if (graphQLErrors) {
@@ -173,8 +175,8 @@ function createIsomorphicLink() {
 				const definition = getMainDefinition(query);
 				return definition.kind === 'OperationDefinition' && definition.operation === 'subscription';
 			},
-			// Use HTTP link for subscriptions until WebSocket server is properly configured
-			authLink.concat(link), // wsLink disabled temporarily
+			// Use WebSocket for subscriptions
+			wsLink,
 			authLink.concat(link),
 		);
 
