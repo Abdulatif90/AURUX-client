@@ -1,38 +1,169 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+ Aurux.uz – Real Estate Platform
 
-## Getting Started
+Project Overview
+Aurux.uz is a scalable real estate platform connecting Users, Agents, and Admins.  
+It allows users to explore, filter, and interact with properties, agents, and community events in real-time.  
+Admins manage content, users, and system operations efficiently.  
 
-First, run the development server:
+This project is designed to handle high traffic, real-time interactions, and role-based access with modular architecture.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-```
+---
+Tech Stack
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Frontend
+- Next.js (14.x) – server-side rendering & routing
+- React (18.x)
+- Apollo Client + GraphQL – efficient data fetching and caching
+- Material-UI (MUI) – component library
+- Chart.js – analytics
+- Swiper, SweetAlert2, react-spring – UX enhancements
+- TypeScript – type safety
+- Sass / SCSS – styling
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+Backend
+- NestJS – modular architecture & GraphQL server
+- GraphQL – flexible querying
+- MongoDB + Mongoose – database & schema management
+- JWT – authentication
+- WebSocket (Socket.io) – real-time messaging
 
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+Infra / Deployment
+- Docker – containerized deployment
+- Nginx – reverse proxy
+- PM2 – process management
+- Firewall – security
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
+Dev Tools
+- ESLint / Prettier – code quality
+- Nodemon – development server auto-reload
+- Standard Version – versioning
+- TypeScript
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
 
-## Learn More
 
-To learn more about Next.js, take a look at the following resources:
+Folder Structure (Frontend)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+aurux-client/
+├─ apollo/
+│ ├─ admin/
+│ ├─ user/
+│ ├─ client.ts # Apollo client setup
+│ └─ store.ts # global state / cache
+├─ libs/
+│ ├─ auth/ # authentication utilities
+│ ├─ components/ # reusable UI components
+│ ├─ enums/
+│ ├─ hooks/
+│ ├─ types/
+│ ├─ config.ts # project configuration
+│ ├─ sweetalert.ts
+│ └─ utils/
+├─ pages/
+│ ├─ _admin/ # admin dashboard
+│ ├─ about/
+│ ├─ account/
+│ ├─ commit/
+│ ├─ agent/
+│ ├─ community/
+│ ├─ member/
+│ ├─ mypage/
+│ ├─ property/
+│ ├─ _app.tsx
+│ ├─ _document.tsx
+│ └─ index.tsx
+├─ public/
+├─ scss/
+└─ package.json
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Architecture Overview & Data Flow
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+1️⃣ Frontend → Backend
+User Action → Next.js Page → Apollo Client → GraphQL Query/Mutation → NestJS Resolver → MongoDB
+
+- Apollo cache stores frequently accessed property lists & user data
+- Optimistic UI updates for likes, follows, and chat
+- Role-based access: Admin vs Agent vs User
+
+2️⃣ Real-Time Chat
+
+User Message → Apollo Client → WebSocket → NestJS Gateway → Recipient Client
+- 1:1 chat implemented for agents and users
+- Handles multiple simultaneous connections
+- Scalable for thousands of active users
+
+ 3️⃣ Admin Dashboard
+- CRUD operations for properties, users, and agents
+- GraphQL mutations with role-based access
+- Analytics charts using Chart.js
+- Secure & efficient data handling
+
+---
+
+Main Features
+
+- Authentication & Authorization – JWT, role-based access
+-  Property Management  – advanced multi-criteria filters (category, price, location, rooms)
+-  Community & Events  – like, follow, comment
+-  Agent Management  – add/edit properties, communicate with users
+-  Real-Time Messaging  – Socket.io chat
+-  Admin Panel  – user/product/agent management
+-  Analytics  – property and user statistics
+-  Responsive UI  – MUI + custom components
+-  Multilingual support  – i18next
+
+---
+
+ Key Decisions & Trade-offs
+
+| Decision | Reason |
+|----------|--------|
+| Next.js | SSR for SEO & performance; routing & static optimization |
+| Apollo Client | GraphQL caching & state management; reduces network calls |
+| WebSocket | Required real-time chat; scalable with NestJS gateways |
+| Docker + Nginx + PM2 | Standardized deploy, reverse proxy & process management |
+| Folder Structure | Feature-based structure for scalability & maintainability |
+
+>  Trade-offs:   
+> - Advanced filters handled client-side + GraphQL queries for performance  
+> - Some caching handled in Apollo for speed, server-side caching deferred for future scaling  
+> - Real-time chat optimized for 1:1; group chat is future enhancement
+
+---
+
+ Challenges
+
+-  Advanced Filtering:  Optimizing GraphQL queries for multiple filter criteria  
+-  Real-Time Messaging:  Managing multiple connections efficiently  
+-  State Management:  Deciding between local state vs Apollo cache for various components  
+-  Deployment:  Securing Docker containers & Nginx configuration with firewall rules
+
+---
+
+  Deployment
+
+- Dockerized Next.js frontend & NestJS backend  
+- PM2 for process management  
+- Nginx as reverse proxy for frontend  
+- Firewall configured for security  
+- Ready for horizontal scaling
+
+---
+
+  Future Improvements
+
+- Implement server-side caching (Redis) for high-traffic queries  
+- Pagination and infinite scroll for property listings  
+- Group chat support & message history optimization  
+- UI/UX enhancements (loading skeletons, empty states)  
+- Automated frontend & backend testing
+
+
+
+
+
+
+
+
