@@ -1,70 +1,97 @@
- Aurux.uz – Real Estate Platform
+  Aurux-client – Frontend for Aurux.uz Real Estate Platform
 
-Project Overview
-Aurux.uz is a scalable real estate platform connecting Users, Agents, and Admins.  
-It allows users to explore, filter, and interact with properties, agents, and community events in real-time.  
-Admins manage content, users, and system operations efficiently.  
+  Project Overview
+Aurux-client is the frontend of  Aurux.uz , a comprehensive real estate platform connecting Users, Agents, and Admins.  
+It allows users to explore, filter, and interact with properties, agents, and community features in real-time.  
+Admins manage content, users, and system efficiently.  
 
-This project is designed to handle high traffic, real-time interactions, and role-based access with modular architecture.
+This frontend is built with  Next.js, React, Apollo Client , and Material-UI, designed for scalability, performance, and maintainability.
 
 ---
-Tech Stack
 
-Frontend
-- Next.js (14.x) – server-side rendering & routing
-- React (18.x)
-- Apollo Client + GraphQL – efficient data fetching and caching
-- Material-UI (MUI) – component library
-- Chart.js – analytics
-- Swiper, SweetAlert2, react-spring – UX enhancements
-- TypeScript – type safety
-- Sass / SCSS – styling
+  Tech Stack
 
-Backend
-- NestJS – modular architecture & GraphQL server
-- GraphQL – flexible querying
-- MongoDB + Mongoose – database & schema management
-- JWT – authentication
-- WebSocket (Socket.io) – real-time messaging
+ Frameworks & Libraries 
+-  Next.js 14.x  – server-side rendering, routing, and performance optimizations  
+-  React 18.x  – component-based UI  
+-  Apollo Client  – GraphQL queries, mutations, and caching  
+-  Material-UI (MUI)  – UI components & design system  
+-  TypeScript  – type safety and maintainability  
+-  Sass / SCSS  – styling  
+-  Valtio  – lightweight state management  
+-  Swiper, Chart.js, SweetAlert2  – interactive UX components  
+-  i18next, next-i18next  – multilingual support  
+-  Socket.io / subscriptions-transport-ws  – real-time subscriptions  
+-  Three.js, react-three/fiber  – 3D visualizations  
 
-Infra / Deployment
-- Docker – containerized deployment
-- Nginx – reverse proxy
-- PM2 – process management
-- Firewall – security
+ Dev & Tools 
+- ESLint / Prettier – code quality  
+- Nodemon – development server hot reload  
+- Standard Version – versioning  
+- Yarn / NPM  
 
-Dev Tools
-- ESLint / Prettier – code quality
-- Nodemon – development server auto-reload
-- Standard Version – versioning
-- TypeScript
+---
 
-
-
-Folder Structure (Frontend)
+  Folder Structure
 
 aurux-client/
 ├─ apollo/
 │ ├─ admin/
+│ │ ├─ mutation.ts
+│ │ └─ query.ts
 │ ├─ user/
-│ ├─ client.ts # Apollo client setup
-│ └─ store.ts # global state / cache
+│ │ ├─ mutation.ts
+│ │ └─ query.ts
+│ ├─ client.ts   Apollo client setup
+│ └─ store.ts   global state / cache
 ├─ libs/
-│ ├─ auth/ # authentication utilities
-│ ├─ components/ # reusable UI components
+│ ├─ auth/
+│ ├─ components/
+│ │ ├─ admin/
+│ │ ├─ agent/
+│ │ ├─ common/
+│ │ ├─ community/
+│ │ ├─ cs/
+│ │ ├─ homepage/
+│ │ ├─ layout/
+│ │ ├─ member/
+│ │ ├─ mypage/
+│ │ └─ property/
+│ │ ├─ Chat.tsx
+│ │ ├─ Footer.tsx
+│ │ └─ Top.tsx
 │ ├─ enums/
+│ │ ├─ board-article.enum.ts
+│ │ ├─ comment.enum.ts
+│ │ ├─ common.enum.ts
+│ │ ├─ like.enum.ts
+│ │ ├─ member.enum.ts
+│ │ ├─ notice.enum.ts
+│ │ ├─ notification.enum.ts
+│ │ ├─ property.enum.ts
+│ │ └─ view.enum.ts
 │ ├─ hooks/
+│ │ └─ useDeviceDetect.ts
 │ ├─ types/
-│ ├─ config.ts # project configuration
-│ ├─ sweetalert.ts
-│ └─ utils/
+│ │ ├─ board-article/
+│ │ ├─ comment/
+│ │ ├─ follow/
+│ │ ├─ like/
+│ │ ├─ member/
+│ │ ├─ property/
+│ │ ├─ view/
+│ │ ├─ common.ts
+│ │ └─ customJwtPayload.ts
+│ ├─ config.ts
+│ ├─ sweetAlert.ts
+│ └─ utils.ts
 ├─ pages/
-│ ├─ _admin/ # admin dashboard
+│ ├─ _admin/
 │ ├─ about/
 │ ├─ account/
-│ ├─ commit/
 │ ├─ agent/
 │ ├─ community/
+│ ├─ cs/
 │ ├─ member/
 │ ├─ mypage/
 │ ├─ property/
@@ -72,98 +99,105 @@ aurux-client/
 │ ├─ _document.tsx
 │ └─ index.tsx
 ├─ public/
+│ ├─ img/
+│ ├─ locales/
+│ ├─ video/
+│ ├─ favicon.ico
+│ ├─ next.svg
+│ └─ vercel.svg
 ├─ scss/
-└─ package.json
+│ ├─ MaterialTheme/
+│ ├─ mobile/
+│ ├─ pc/
+│ ├─ app.scss
+│ ├─ reset.scss
+│ └─ variables.scss
+├─ .gitignore
+├─ .prettierrc
+├─ README.md
+├─ next-i18next.config.js
+├─ next.config.js
+├─ package.json
+├─ tsconfig.json
+└─ yarn.lock
 
 
 ---
 
-Architecture Overview & Data Flow
+  Main Features
 
-1️⃣ Frontend → Backend
-User Action → Next.js Page → Apollo Client → GraphQL Query/Mutation → NestJS Resolver → MongoDB
-
-- Apollo cache stores frequently accessed property lists & user data
-- Optimistic UI updates for likes, follows, and chat
-- Role-based access: Admin vs Agent vs User
-
-2️⃣ Real-Time Chat
-
-User Message → Apollo Client → WebSocket → NestJS Gateway → Recipient Client
-- 1:1 chat implemented for agents and users
-- Handles multiple simultaneous connections
-- Scalable for thousands of active users
-
- 3️⃣ Admin Dashboard
-- CRUD operations for properties, users, and agents
-- GraphQL mutations with role-based access
-- Analytics charts using Chart.js
-- Secure & efficient data handling
-
----
-
-Main Features
-
-- Authentication & Authorization – JWT, role-based access
--  Property Management  – advanced multi-criteria filters (category, price, location, rooms)
--  Community & Events  – like, follow, comment
--  Agent Management  – add/edit properties, communicate with users
--  Real-Time Messaging  – Socket.io chat
--  Admin Panel  – user/product/agent management
--  Analytics  – property and user statistics
--  Responsive UI  – MUI + custom components
--  Multilingual support  – i18next
+-  Authentication & Authorization 
+  - JWT-based auth and role-based access  
+-  Property Management 
+  - Browse, filter, like, follow properties  
+  - Advanced filters: category, price, location, size, rooms  
+-  Community & Social Features 
+  - Comment, like, follow users  
+  - Event boards, news, notifications  
+-  Agent Management 
+  - Agent profile pages, property management, follow/follower interactions  
+-  Admin Panel 
+  - Manage users, agents, properties, comments  
+-  Real-Time Features 
+  - Chat & live notifications using WebSockets  
+-  Interactive Components 
+  - Charts, sliders, and dynamic UI elements with Chart.js, Swiper, and Three.js  
+-  Multilingual Support 
+  - i18next + next-i18next for full language support  
+-  Responsive Design 
+  - Mobile-first approach with SCSS and MUI customization  
 
 ---
 
- Key Decisions & Trade-offs
+  Data Flow & Architecture
+
+   1️⃣ GraphQL Queries & Mutations
+Component → Apollo Client → GraphQL Query/Mutation → Backend → Cache
+- Apollo Client caches queries to reduce network requests  
+- Optimistic updates for likes, follows, and chat  
+- Global state managed via `store.ts` + Valtio for reactivity  
+
+   2️⃣ Real-Time Communication
+Chat Component → WebSocket → Backend → Recipient Component
+- Efficient 1:1 chat  
+- Ready for scalable multi-user environment  
+
+   3️⃣ Component Architecture
+- Feature-based component organization  
+- Reusable UI components (`libs/components/`)  
+- Modular hooks & utilities for consistent behavior  
+- Enums & types enforce type safety and reduce errors  
+
+---
+
+  Key Decisions
 
 | Decision | Reason |
 |----------|--------|
-| Next.js | SSR for SEO & performance; routing & static optimization |
-| Apollo Client | GraphQL caching & state management; reduces network calls |
-| WebSocket | Required real-time chat; scalable with NestJS gateways |
-| Docker + Nginx + PM2 | Standardized deploy, reverse proxy & process management |
-| Folder Structure | Feature-based structure for scalability & maintainability |
-
->  Trade-offs:   
-> - Advanced filters handled client-side + GraphQL queries for performance  
-> - Some caching handled in Apollo for speed, server-side caching deferred for future scaling  
-> - Real-time chat optimized for 1:1; group chat is future enhancement
+| Next.js | SSR, routing, performance optimizations |
+| Apollo Client | Centralized data fetching, caching, and state management |
+| Material-UI | Consistent, responsive design system |
+| Valtio + Apollo Cache | Lightweight global state + GraphQL caching |
+| Feature-based folder structure | Scalability and maintainability |
+| Three.js / react-three/fiber | 3D visualizations for property previews |
+| Socket.io | Real-time chat & notifications |
 
 ---
 
- Challenges
+  Deployment & Infrastructure
 
--  Advanced Filtering:  Optimizing GraphQL queries for multiple filter criteria  
--  Real-Time Messaging:  Managing multiple connections efficiently  
--  State Management:  Deciding between local state vs Apollo cache for various components  
--  Deployment:  Securing Docker containers & Nginx configuration with firewall rules
-
----
-
-  Deployment
-
-- Dockerized Next.js frontend & NestJS backend  
-- PM2 for process management  
-- Nginx as reverse proxy for frontend  
-- Firewall configured for security  
-- Ready for horizontal scaling
+- Dockerized frontend (if used in production)  
+- PM2 for process management (optional for SSR)  
+- Nginx as reverse proxy  
+- Firewall configuration for production security  
+- Ready for high-traffic and scalable environments  
 
 ---
 
   Future Improvements
 
-- Implement server-side caching (Redis) for high-traffic queries  
-- Pagination and infinite scroll for property listings  
-- Group chat support & message history optimization  
-- UI/UX enhancements (loading skeletons, empty states)  
-- Automated frontend & backend testing
-
-
-
-
-
-
-
-
+- Server-side caching for high-traffic GraphQL queries  
+- Infinite scroll & pagination for property listings  
+- Enhanced offline support & PWA capabilities  
+- Automated testing coverage (Jest + React Testing Library)  
+- Performance monitoring & logging (Sentry, LogRocket)
