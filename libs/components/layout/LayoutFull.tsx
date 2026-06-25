@@ -12,7 +12,6 @@ import 'swiper/css/navigation';
 
 const withLayoutFull = <P extends object>(Component: ComponentType<P>) => {
     const WrappedComponent  = (props: P) => {
-		const router = useRouter();
 		const device = useDeviceDetect();
 		useAuthSync();
 	
