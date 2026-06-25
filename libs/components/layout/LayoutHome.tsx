@@ -23,7 +23,7 @@ const withLayoutMain = <P extends object>(Component: ComponentType<P>) =>{
 		<>
 			<Head>
 				<title>Aurux</title>
-				<meta name="description" content={Aurux} />
+				<meta name="description" content="Aurux" />
 			</Head>
 			{device === 'mobile'? ( 
 				<Stack id="mobile-wrap">
