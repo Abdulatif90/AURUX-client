@@ -1,6 +1,7 @@
 import React, { useEffect, ComponentType  } from 'react';
 import { useRouter } from 'next/router';
 import useDeviceDetect from '../../hooks/useDeviceDetect';
+import useAuthSync from '../../hooks/useAuthSync';
 import Head from 'next/head';
 import Top from '../Top';
 import Footer from '../Footer';
@@ -75,6 +76,7 @@ const withLayoutBasic = <P extends object>(Component: ComponentType<P>) => {
         const router = useRouter();
         const { t } = useTranslation('common');
         const device = useDeviceDetect();
+		useAuthSync();
 	    const isAuthHeader = router.pathname === '/account/join';
         const meta = PAGE_META[router.pathname] ?? DEFAULT_META;
         const title = meta.title;
