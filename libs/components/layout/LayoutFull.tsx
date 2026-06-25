@@ -20,7 +20,7 @@ const withLayoutFull = <P extends object>(Component: ComponentType<P>) => {
 		<>
 		<Head>
 				<title>Aurux</title>
-				<meta name="description" content={Aurux} />
+				<meta name="description" content="Aurux" />
 		</Head>
 			{device === 'mobile'?
 				(
@@ -47,9 +47,7 @@ const withLayoutFull = <P extends object>(Component: ComponentType<P>) => {
 						<Stack id={'main'}>
 							<Component {...props} />
 						</Stack>
-
 						<Chat />
-
 						<Stack id={'footer'}>
 							<Footer />
 						</Stack>
