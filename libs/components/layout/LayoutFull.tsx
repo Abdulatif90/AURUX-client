@@ -1,5 +1,4 @@
-import React, { useEffect } from 'react';
-import { useRouter } from 'next/router';
+import React, { useEffect,ComponentType } from 'react';
 import useDeviceDetect from '../../hooks/useDeviceDetect';
 import Head from 'next/head';
 import Top from '../Top';
@@ -7,17 +6,14 @@ import Footer from '../Footer';
 import { Stack } from '@mui/material';
 import { getJwtToken, updateUserInfo } from '../../auth';
 import Chat from '../Chat';
-import { useReactiveVar } from '@apollo/client';
-import { userVar } from '../../../apollo/store';
 import 'swiper/css';
 import 'swiper/css/pagination';
 import 'swiper/css/navigation';
 
-const withLayoutFull = (Component: any) => {
-	return (props: any) => {
+const withLayoutFull = <P extends object>(Component: ComponentType<P>) => {
+    const WrappedComponent  = (props: P) => {
 		const router = useRouter();
 		const device = useDeviceDetect();
-		const user = useReactiveVar(userVar);
 
 		/** LIFECYCLES **/
 		useEffect(() => {
@@ -26,15 +22,15 @@ const withLayoutFull = (Component: any) => {
 		}, []);
 
 		/** HANDLERS **/
-
-		if (device == 'mobile') {
-			return (
-				<>
-					<Head>
-						<title>Aurux</title>
-						<meta name={'title'} content={`Aurux`} />
-					</Head>
-					<Stack id="mobile-wrap">
+	return(
+		<>
+		<Head>
+				<title>Aurux</title>
+				<meta name="description" content={Aurux} />
+		</Head>
+			{device === 'mobile'?
+				(
+				<Stack id="mobile-wrap">
 						<Stack id={'top'}>
 							<Top />
 						</Stack>
@@ -47,16 +43,9 @@ const withLayoutFull = (Component: any) => {
 							<Footer />
 						</Stack>
 					</Stack>
-				</>
-			);
-		} else {
-			return (
-				<>
-					<Head>
-						<title>Aurux</title>
-						<meta name={'title'} content={`Aurux`} />
-					</Head>
-					<Stack id="pc-wrap">
+			)
+		: (
+				<Stack id="pc-wrap">
 						<Stack id={'top'}>
 							<Top />
 						</Stack>
@@ -70,11 +59,12 @@ const withLayoutFull = (Component: any) => {
 						<Stack id={'footer'}>
 							<Footer />
 						</Stack>
-					</Stack>
-				</>
-			);
-		}
-	};
+				</Stack>
+				)}
+	</>
+	)};
+	WrappedComponent.displayName = `withLayoutFull(${Component.displayName || Component.name || 'Component'})`;
+    return WrappedComponent;      
 };
 
 export default withLayoutFull;
