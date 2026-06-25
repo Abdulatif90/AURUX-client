@@ -6,7 +6,6 @@ import Head from 'next/head';
 import Top from '../Top';
 import Footer from '../Footer';
 import { Stack } from '@mui/material';
-import { getJwtToken, updateUserInfo } from '../../auth';
 import Chat from '../Chat';
 import { useTranslation } from 'next-i18next';
 import 'swiper/css';
