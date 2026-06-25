@@ -1,22 +1,19 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, ComponentType } from 'react';
 import useDeviceDetect from '../../hooks/useDeviceDetect';
 import Head from 'next/head';
 import Top from '../Top';
 import Footer from '../Footer';
 import { Stack } from '@mui/material';
 import HeaderFilter from '../homepage/HeaderFilter';
-import { userVar } from '../../../apollo/store';
-import { useReactiveVar } from '@apollo/client';
 import { getJwtToken, updateUserInfo } from '../../auth';
 import Chat from '../Chat';
 import 'swiper/css';
 import 'swiper/css/pagination';
 import 'swiper/css/navigation';
 
-const withLayoutMain = (Component: any) => {
-	return (props: any) => {
+const withLayoutMain = <P extends object>(Component: ComponentType<P>) =>{
+	const WrappedComponent = (props: any) => {
 		const device = useDeviceDetect();
-		const user = useReactiveVar(userVar);
 
 		/** LIFECYCLES **/
 		useEffect(() => {
@@ -26,60 +23,47 @@ const withLayoutMain = (Component: any) => {
 
 		/** HANDLERS **/
 
-		if (device == 'mobile') {
-			return (
-				<>
-					<Head>
-						<title>Aurux</title>
-						<meta name={'title'} content={`Aurux`} />
-					</Head>
-					<Stack id="mobile-wrap">
+	ruturn (
+		<>
+			<Head>
+				<title>Aurux</title>
+				<meta name="description" content={Aurux} />
+			</Head>
+			{device === 'mobile'? ( 
+				<Stack id="mobile-wrap">
 						<Stack id={'top'}>
 							<Top />
 						</Stack>
-
 						<Stack id={'main'}>
 							<Component {...props} />
 						</Stack>
-
 						<Stack id={'footer'}>
 							<Footer />
 						</Stack>
 					</Stack>
-				</>
-			);
-		} else {
-			return (
-				<>
-					<Head>
-						<title>Aurux</title>
-						<meta name={'title'} content={`Aurux`} />
-					</Head>
-					<Stack id="pc-wrap">
-					<Stack id={'top'}>
-						<Top />
-					</Stack>
-
-					<Stack className={'header-main'}>
-						<Stack className={'container'}>
-							<HeaderFilter />
-						</Stack>
-					</Stack>
-
-					<Stack id={'main'}>
-						<Component {...props} />
-					</Stack>
-
-					<Chat />
-
-					<Stack id={'footer'}>
-						<Footer />
+				):
+		      (
+			<Stack id="pc-wrap">
+				<Stack id={'top'}>
+					<Top />
+				</Stack>
+				<Stack className={'header-main'}>
+					<Stack className={'container'}>
+						<HeaderFilter />
 					</Stack>
 				</Stack>
-				</>
-			);
-		}
-	};
-};
+				<Stack id={'main'}>
+					<Component {...props} />
+				</Stack>
+				<Chat />
+				<Stack id={'footer'}>
+					<Footer />
+				</Stack>
+			</Stack>
+			)}
+	</>
+	)};
+	WrappedComponent.displayName = `withLayoutMain(${Component.displayName || Component.name || 'Component'})`;
+    return WrappedComponent;  
 
 export default withLayoutMain;
