@@ -1,10 +1,10 @@
-import React, { useEffect,ComponentType } from 'react';
+import React, { ComponentType } from 'react';
 import useDeviceDetect from '../../hooks/useDeviceDetect';
+import useAuthSync from '../../hooks/useAuthSync';
 import Head from 'next/head';
 import Top from '../Top';
 import Footer from '../Footer';
 import { Stack } from '@mui/material';
-import { getJwtToken, updateUserInfo } from '../../auth';
 import Chat from '../Chat';
 import 'swiper/css';
 import 'swiper/css/pagination';
@@ -14,13 +14,8 @@ const withLayoutFull = <P extends object>(Component: ComponentType<P>) => {
     const WrappedComponent  = (props: P) => {
 		const router = useRouter();
 		const device = useDeviceDetect();
-
-		/** LIFECYCLES **/
-		useEffect(() => {
-			const jwt = getJwtToken();
-			if (jwt) updateUserInfo(jwt);
-		}, []);
-
+		useAuthSync();
+	
 		/** HANDLERS **/
 	return(
 		<>
