@@ -12,14 +12,14 @@ import 'swiper/css/pagination';
 import 'swiper/css/navigation';
 
 const withLayoutMain = <P extends object>(Component: ComponentType<P>) =>{
-	const WrappedComponent = (props: any) => {
+	const WrappedComponent = (props: P) => {
 		const device = useDeviceDetect();
 		useAuthSync();
 
 	
 		/** HANDLERS **/
 
-	ruturn (
+	return (
 		<>
 			<Head>
 				<title>Aurux</title>
@@ -61,5 +61,6 @@ const withLayoutMain = <P extends object>(Component: ComponentType<P>) =>{
 	)};
 	WrappedComponent.displayName = `withLayoutMain(${Component.displayName || Component.name || 'Component'})`;
     return WrappedComponent;  
+	};
 
 export default withLayoutMain;
