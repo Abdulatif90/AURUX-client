@@ -1,4 +1,4 @@
-import React, { useEffect, ComponentType  } from 'react';
+import React, { ComponentType } from 'react';
 import { useRouter } from 'next/router';
 import useDeviceDetect from '../../hooks/useDeviceDetect';
 import useAuthSync from '../../hooks/useAuthSync';
@@ -83,12 +83,6 @@ const withLayoutBasic = <P extends object>(Component: ComponentType<P>) => {
         const desc = meta.desc;
 		const bgImage = meta.bgImage;
 	
-		/** LIFECYCLES **/
-		useEffect(() => {
-			const jwt = getJwtToken();
-			if (jwt) updateUserInfo(jwt);
-		}, []);
-
 		/** HANDLERS **/
 	return(
 	<>
