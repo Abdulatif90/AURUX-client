@@ -21,6 +21,41 @@ interface ChatMessage {
 	avatar?: string;
 }
 
+let cachedChatBackendAvailable: boolean | null = null;
+let chatBackendCheckPromise: Promise<boolean> | null = null;
+
+const checkChatBackendAvailability = (): Promise<boolean> => {
+	if (cachedChatBackendAvailable !== null) return Promise.resolve(cachedChatBackendAvailable);
+	if (chatBackendCheckPromise) return chatBackendCheckPromise;
+
+	chatBackendCheckPromise = (async () => {
+		try {
+			const response = await fetch(
+				process.env.REACT_APP_API_GRAPHQL_URL || process.env.NEXT_PUBLIC_API_GRAPHQL_URL || 'http://localhost:3005/graphql',
+				{
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						query: `query CheckChatAvailability { __type(name: "Mutation") { fields { name } } }`,
+					}),
+				},
+			);
+			if (response.ok) {
+				const data = await response.json();
+				const mutations = data.data?.__type?.fields || [];
+				cachedChatBackendAvailable = mutations.some((field: any) => field.name === 'sendChatMessage');
+			} else {
+				cachedChatBackendAvailable = false;
+			}
+		} catch {
+			cachedChatBackendAvailable = false;
+		}
+		return cachedChatBackendAvailable as boolean;
+	})();
+
+	return chatBackendCheckPromise;
+};
+
 // Smart response system
 const generateSmartResponse = (userMessage: string, userName: string): string => {
 	const message = userMessage.toLowerCase().trim();
@@ -201,50 +236,10 @@ const Chat = () => {
 		}
 	}, [messagesList.length]);
 
-	// Check chat backend availability on component mount
+	// Check chat backend availability once per session (cached across page navigations)
 	useEffect(() => {
-		const checkBackendAvailability = async () => {
-			if (chatBackendAvailable !== null) return; // Already checked
-			
-			try {
-				const response = await fetch(process.env.REACT_APP_API_GRAPHQL_URL || process.env.NEXT_PUBLIC_API_GRAPHQL_URL || 'http://localhost:3005/graphql', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({
-						query: `
-							query CheckChatAvailability {
-								__type(name: "Mutation") {
-									fields {
-										name
-									}
-								}
-							}
-						`
-					}),
-				});
-				
-				if (response.ok) {
-					const data = await response.json();
-					const mutations = data.data?.__type?.fields || [];
-					const hasChatMutation = mutations.some((field: any) => field.name === 'sendChatMessage');
-					setChatBackendAvailable(hasChatMutation);
-					
-					if (process.env.NODE_ENV === 'development') {
-						console.log(`Chat backend ${hasChatMutation ? 'is' : 'is not'} available`);
-					}
-				} else {
-					setChatBackendAvailable(false);
-				}
-			} catch (error) {
-				setChatBackendAvailable(false);
-				if (process.env.NODE_ENV === 'development') {
-					console.log('Chat backend availability check failed:', error);
-				}
-			}
-		};
-		
-		checkBackendAvailability();
-	}, [chatBackendAvailable]); // Only trigger on message count change
+		checkChatBackendAvailability().then(setChatBackendAvailable);
+	}, []);
 
 	/** HANDLERS **/
 	const handleOpenChat = () => {

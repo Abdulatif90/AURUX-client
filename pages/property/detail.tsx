@@ -24,7 +24,6 @@ import { CommentGroup } from '../../libs/enums/comment.enum';
 import { Pagination as MuiPagination } from '@mui/material';
 import Link from 'next/link';
 import RemoveRedEyeIcon from '@mui/icons-material/RemoveRedEye';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { GET_PROPERTIES, GET_PROPERTY, GET_COMMENTS } from '../../apollo/user/query';
 import { T } from '../../libs/types/common';
 import { Direction, Message } from '../../libs/enums/common.enum';
@@ -35,11 +34,7 @@ import 'swiper/css/pagination';
 
 SwiperCore.use([Autoplay, Navigation, Pagination]);
 
-export const getStaticProps = async ({ locale }: any) => ({
-	props: {
-		...(await serverSideTranslations(locale, ['common'])),
-	},
-});
+export { getStaticProps } from '../../libs/getStaticProps';
 
 const PropertyDetail: NextPage = ({ initialComment, ...props }: any) => {
 	const device = useDeviceDetect();

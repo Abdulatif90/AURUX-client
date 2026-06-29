@@ -12,15 +12,10 @@ import { useMutation, useReactiveVar } from '@apollo/client';
 import { sweetErrorHandling, sweetTopSmallSuccessAlert, sweetMixinErrorAlert } from '../../libs/sweetAlert';
 import MemberFollowings from '../../libs/components/member/MemberFollowings';
 import { userVar } from '../../apollo/store';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { Messages } from '../../libs/config';
 import { LIKE_TARGET_MEMBER, SUBSCRIBE, UNSUBSCRIBE } from '../../apollo/user/mutation';
 
-export const getStaticProps = async ({ locale }: any) => ({
-	props: {
-		...(await serverSideTranslations(locale, ['common'])),
-	},
-});
+export { getStaticProps } from '../../libs/getStaticProps';
 
 const MemberPage: NextPage = () => {
 	const device = useDeviceDetect();

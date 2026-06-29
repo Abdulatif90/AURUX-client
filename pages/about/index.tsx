@@ -4,13 +4,16 @@ import useDeviceDetect from '../../libs/hooks/useDeviceDetect';
 import withLayoutBasic from '../../libs/components/layout/LayoutBasic';
 import { Stack, Box } from '@mui/material';
 
+export { getStaticProps } from '../../libs/getStaticProps';
+
 const About: NextPage = () => {
 	const device = useDeviceDetect();
 
-	if (device === 'mobile') {
-		return <div>ABOUT PAGE MOBILE</div>;
-	} else {
-		return (
+	return (
+	<>
+	{device === 'mobile'? ( 
+		<div>ABOUT PAGE MOBILE</div>
+	) : (
 			<Stack className={'about-page'}>
 				<Stack className={'intro'}>
 					<Stack className={'container'}>
@@ -149,8 +152,10 @@ const About: NextPage = () => {
 					</Stack>
 				</Stack>
 			</Stack>
-		);
-	}
-};
+	)}
+	</>
+	);
+}
+
 
 export default withLayoutBasic(About);

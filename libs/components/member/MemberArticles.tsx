@@ -13,11 +13,15 @@ import { LIKE_TARGET_BOARD_ARTICLE } from '../../../apollo/user/mutation';
 import { sweetMixinErrorAlert, sweetTopSmallSuccessAlert } from '../../sweetAlert';
 import { Messages } from '../../config';
 
-const MemberArticles: NextPage = ({ initialInput, ...props }: any) => {
+
+interface MemberArticlesProps {
+    initialInput: BoardArticlesInquiry;
+}
+const MemberArticles = ({ initialInput }: MemberArticlesProps) => {
 	const device = useDeviceDetect();
 	const router = useRouter();
 	const [total, setTotal] = useState<number>(0);
-	const { memberId } = router.query;
+	const memberId = router.query.memberId;
 	const [searchFilter, setSearchFilter] = useState<BoardArticlesInquiry>(initialInput);
 	const [memberBoArticles, setMemberBoArticles] = useState<BoardArticle[]>([]);
 
@@ -43,8 +47,11 @@ const MemberArticles: NextPage = ({ initialInput, ...props }: any) => {
 
 	/** LIFECYCLES **/
 	useEffect(() => {
-		if (memberId) setSearchFilter({ ...initialInput, search: { memberId: memberId } });
-	}, [memberId]);
+    if (memberId) {
+        const id = Array.isArray(memberId) ? memberId[0] : memberId;
+        setSearchFilter({ ...initialInput, search: { memberId: id } });
+    }
+}, [memberId, initialInput]);
 
 	/** HANDLERS **/
 	const paginationHandler = (e: any, value: number) => {

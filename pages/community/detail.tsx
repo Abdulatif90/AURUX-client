@@ -19,7 +19,6 @@ import dynamic from 'next/dynamic';
 import { CommentGroup, CommentStatus } from '../../libs/enums/comment.enum';
 import { T } from '../../libs/types/common';
 import EditIcon from '@mui/icons-material/Edit';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { BoardArticle } from '../../libs/types/board-article/board-article';
 import { GET_BOARD_ARTICLE, GET_COMMENTS } from '../../apollo/user/query';
 import { CREATE_COMMENT, LIKE_TARGET_BOARD_ARTICLE, UPDATE_COMMENT } from '../../apollo/user/mutation';
@@ -34,11 +33,7 @@ import { CommentUpdate } from '../../libs/types/comment/comment.update';
 
 const ToastViewerComponent = dynamic(() => import('../../libs/components/community/TViewer'), { ssr: false });
 
-export const getStaticProps = async ({ locale }: any) => ({
-	props: {
-		...(await serverSideTranslations(locale, ['common'])),
-	},
-});
+export { getStaticProps } from '../../libs/getStaticProps';
 
 const CommunityDetail: NextPage = ({ initialInput, ...props }: T) => {
 	const device = useDeviceDetect();

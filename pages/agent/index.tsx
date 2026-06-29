@@ -7,7 +7,6 @@ import { Menu, MenuItem } from '@mui/material';
 import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
 import AgentCard from '../../libs/components/common/AgentCard';
 import { useRouter } from 'next/router';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { Member } from '../../libs/types/member/member';
 import { useMutation, useQuery } from '@apollo/client';
 import { LIKE_TARGET_MEMBER, LIKE_TARGET_PROPERTY } from '../../apollo/user/mutation';
@@ -17,11 +16,7 @@ import { Message } from '../../libs/enums/common.enum';
 import { Messages } from '../../libs/config';
 import { sweetMixinErrorAlert, sweetTopSmallSuccessAlert } from '../../libs/sweetAlert';
 
-export const getStaticProps = async ({ locale }: any) => ({
-	props: {
-		...(await serverSideTranslations(locale, ['common'])),
-	},
-});
+export { getStaticProps } from '../../libs/getStaticProps';
 
 const AgentList: NextPage = ({ initialInput, ...props }: any): JSX.Element => {
 	const device = useDeviceDetect();
@@ -126,14 +121,11 @@ const likeMemberHandler = async (user: any, id: string) => {
 		await sweetMixinErrorAlert(error.message).then();
 	}
 };
-
-	if (device === 'mobile') {
-		return <h1>AGENTS PAGE MOBILE</h1>;
-	}
-	if (device === 'mobile') {
-		return <h1>AGENTS PAGE MOBILE</h1>;
-	}
 	return (
+	<>
+		{device === 'mobile'? (	
+		<h1>AGENTS PAGE MOBILE</h1>
+	 ) : (
 			<Stack className={'agent-list-page'}>
 				<Stack className={'container'}>
 					<Stack className={'filter'}>
@@ -211,9 +203,10 @@ const likeMemberHandler = async (user: any, id: string) => {
 					</Stack>
 				</Stack>
 			</Stack>
-		);
-	}
-
+	)}
+	</>
+	);
+}
 
 AgentList.defaultProps = {
 	initialInput: {

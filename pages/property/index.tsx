@@ -8,7 +8,6 @@ import Filter from '../../libs/components/property/Filter';
 import { useRouter } from 'next/router';
 import { PropertiesInquiry } from '../../libs/types/property/property.input';
 import { Property } from '../../libs/types/property/property';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
 import { Direction, Message } from '../../libs/enums/common.enum';
 import { GET_PROPERTIES } from '../../apollo/user/query';
@@ -17,11 +16,7 @@ import { useMutation, useQuery } from '@apollo/client';
 import { LIKE_TARGET_PROPERTY } from '../../apollo/user/mutation';
 import { sweetMixinErrorAlert, sweetTopSmallSuccessAlert } from '../../libs/sweetAlert';
 
-export const getStaticProps = async ({ locale }: any) => ({
-	props: {
-		...(await serverSideTranslations(locale, ['common'])),
-	},
-});
+export { getStaticProps } from '../../libs/getStaticProps';
 
 const PropertyList: NextPage = ({ initialInput, ...props }: any) => {
 	const device = useDeviceDetect();

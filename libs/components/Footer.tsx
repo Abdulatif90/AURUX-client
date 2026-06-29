@@ -4,7 +4,6 @@ import TelegramIcon from '@mui/icons-material/Telegram';
 import TwitterIcon from '@mui/icons-material/Twitter';
 import useDeviceDetect from '../hooks/useDeviceDetect';
 import { Stack, Box } from '@mui/material';
-import moment from 'moment';
 import Swal from 'sweetalert2';
 
 const Footer = () => {
@@ -92,7 +91,7 @@ const Footer = () => {
 					</Stack>
 				</Stack>
 				<Stack className={'second'}>
-					<span>© Aurux - All rights reserved. Aurux {moment().year()}</span>
+					<span>© Aurux - All rights reserved. Aurux {new Date().getFullYear()}</span>
 					<span>Author - Sharipov Abdulatif</span>
 				</Stack>
 			</Stack>
@@ -166,7 +165,7 @@ const Footer = () => {
 					</Stack>
 				</Stack>
 				<Stack className={'second'}>
-					<span>© Aurux - All rights reserved. Aurux {moment().year()}</span>
+					<span>© Aurux - All rights reserved. Aurux {new Date().getFullYear()}</span>
 					<span>Author - Sharipov Abdulatif</span>
 					<span>Privacy · Terms · Sitemap</span>
 				</Stack>

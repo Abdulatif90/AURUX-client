@@ -1,11 +1,19 @@
 import type { ComponentType } from 'react';
+import { Dispatch, SetStateAction } from 'react';
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
+import { useReactiveVar } from '@apollo/client';
+import { userVar } from '../../../apollo/store';
+import useAuthSync from '../../hooks/useAuthSync';
+import { REACT_APP_API_URL } from '../../config';
+import { logOut } from '../../auth';
+import { MemberType } from '../../enums/member.enum';
 import MenuList from '../admin/AdminMenuList';
+
 import Toolbar from '@mui/material/Toolbar';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
-import { Menu, MenuItem } from '@mui/material';
+import { Menu, MenuItem, Snackbar, Alert, AlertColor } from '@mui/material';
 import Drawer from '@mui/material/Drawer';
 import AppBar from '@mui/material/AppBar';
 import Avatar from '@mui/material/Avatar';
@@ -13,33 +21,36 @@ import IconButton from '@mui/material/IconButton';
 import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
 import Tooltip from '@mui/material/Tooltip';
-import { getJwtToken, logOut, updateUserInfo } from '../../auth';
-import { useReactiveVar } from '@apollo/client';
-import { userVar } from '../../../apollo/store';
-import { REACT_APP_API_URL } from '../../config';
-import { MemberType } from '../../enums/member.enum';
+
 const drawerWidth = 280;
 
-const withAdminLayout = (Component: ComponentType) => {
-	return (props: object) => {
+interface AdminLayoutProps {
+    setSnackbar: Dispatch<SetStateAction<{ open: boolean; message: string; severity: AlertColor }>>;
+    setTitle: Dispatch<SetStateAction<string>>;
+}
+const withAdminLayout = <P extends object>(Component: ComponentType<P & AdminLayoutProps>) => {
+    const WrappedComponent = (props: P) => {  
 		const router = useRouter();
 		const user = useReactiveVar(userVar);
-		const [settingsState, setSettingsStateState] = useState(false);
 		const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null);
-		const [openMenu, setOpenMenu] = useState(false);
-		const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+		const [snackbar, setSnackbar] = useState<{ 
+			open: boolean, 
+			message: string, 
+			severity: AlertColor
+		 }>({ open: false, message: '', severity: 'success' });
 		const [title, setTitle] = useState('admin');
 		const [loading, setLoading] = useState(true);
+		
+
 
 		/** LIFECYCLES **/
+		useAuthSync();
 		useEffect(() => {
-			const jwt = getJwtToken();
-			if (jwt) updateUserInfo(jwt);
 			setLoading(false);
 		}, []);
 
 		useEffect(() => {
-			if (!loading && user.memberType !== MemberType.ADMIN) {
+			if (!loading && user?.memberType !== MemberType.ADMIN) {
 				router.push('/').then();
 			}
 		}, [loading, user, router]);
@@ -53,6 +64,8 @@ const withAdminLayout = (Component: ComponentType) => {
 			setAnchorElUser(null);
 		};
 
+		const handleClose = () => setSnackbar({ ...snackbar, open: false });
+
 		const logoutHandler = async () => {
 			await logOut();
 			// No need to push to '/' because logOut already redirects
@@ -62,6 +75,19 @@ const withAdminLayout = (Component: ComponentType) => {
 
 		return (
 			<main id="pc-wrap" className="admin">
+				<Snackbar
+					open={snackbar.open}
+					autoHideDuration={3000}
+					onClose={handleClose}
+					anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+				>
+					<Alert
+						severity={snackbar.severity}
+						onClose={handleClose}
+					>
+						{snackbar.message}
+					</Alert>
+				</Snackbar>
 				<Box component={'div'} sx={{ display: 'flex' }}>
 					<AppBar
 						position="fixed"
@@ -150,11 +176,13 @@ const withAdminLayout = (Component: ComponentType) => {
 								direction={'row'}
 								alignItems={'center'}
 								sx={{
-									bgcolor: openMenu ? 'rgba(255, 255, 255, 0.04)' : 'none',
-									borderRadius: '8px',
-									px: '24px',
-									py: '11px',
-								}}
+										borderRadius: '8px',
+										px: '24px',
+										py: '11px',
+										'&:hover': {
+											bgcolor: 'rgba(255, 255, 255, 0.04)',
+								},	
+										}}
 							>
 								<Avatar
 									src={user?.memberImage ? `${REACT_APP_API_URL}/${user?.memberImage}` : '/img/profile/defaultUser.svg'}
@@ -172,13 +200,14 @@ const withAdminLayout = (Component: ComponentType) => {
 					</Drawer>
 
 					<Box component={'div'} id="bunker" sx={{ flexGrow: 1 }}>
-						{/*@ts-ignore*/}
 						<Component {...props} setSnackbar={setSnackbar} setTitle={setTitle} />
 					</Box>
 				</Box>
 			</main>
 		);
 	};
+	 WrappedComponent.displayName = `withAdminLayout(${Component.displayName || Component.name || 'Component'})`;
+    return WrappedComponent;
 };
 
 export default withAdminLayout;

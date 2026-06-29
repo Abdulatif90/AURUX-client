@@ -17,15 +17,10 @@ import WriteArticle from '../../libs/components/mypage/WriteArticle';
 import MemberFollowers from '../../libs/components/member/MemberFollowers';
 import { sweetErrorHandling, sweetTopSmallSuccessAlert, sweetMixinErrorAlert } from '../../libs/sweetAlert';
 import MemberFollowings from '../../libs/components/member/MemberFollowings';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { LIKE_TARGET_MEMBER, LIKE_TARGET_PROPERTY, SUBSCRIBE, UNSUBSCRIBE } from '../../apollo/user/mutation';
 import { Messages } from '../../libs/config';
 
-export const getStaticProps = async ({ locale }: any) => ({
-	props: {
-		...(await serverSideTranslations(locale, ['common'])),
-	},
-});
+export { getStaticProps } from '../../libs/getStaticProps';
 
 const MyPage: NextPage = () => {
 	const device = useDeviceDetect();

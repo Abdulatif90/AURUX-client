@@ -6,13 +6,8 @@ import { Box, Button, Checkbox, FormControlLabel, FormGroup, Stack } from '@mui/
 import { useRouter } from 'next/router';
 import { logIn, signUp } from '../../libs/auth';
 import { sweetMixinErrorAlert, sweetMixinSuccessAlert } from '../../libs/sweetAlert';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 
-export const getStaticProps = async ({ locale }: any) => ({
-	props: {
-		...(await serverSideTranslations(locale, ['common'])),
-	},
-});
+export { getStaticProps } from '../../libs/getStaticProps';
 
 const Join: NextPage = () => {
 	const router = useRouter();
