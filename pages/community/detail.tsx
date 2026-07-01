@@ -14,10 +14,10 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import ChatIcon from '@mui/icons-material/Chat';
 import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineRounded';
 import { CommentInput, CommentsInquiry } from '../../libs/types/comment/comment.input';
-import { Comment } from '../../libs/types/comment/comment';
+import { Comment, Comments } from '../../libs/types/comment/comment';
+import { CustomJwtPayload } from '../../libs/types/customJwtPayload';
 import dynamic from 'next/dynamic';
 import { CommentGroup, CommentStatus } from '../../libs/enums/comment.enum';
-import { T } from '../../libs/types/common';
 import EditIcon from '@mui/icons-material/Edit';
 import { BoardArticle } from '../../libs/types/board-article/board-article';
 import { GET_BOARD_ARTICLE, GET_COMMENTS } from '../../apollo/user/query';
@@ -30,37 +30,34 @@ import {
 	sweetTopSmallSuccessAlert,
 } from '../../libs/sweetAlert';
 import { CommentUpdate } from '../../libs/types/comment/comment.update';
+import { Direction } from '../../libs/enums/common.enum';
 
 const ToastViewerComponent = dynamic(() => import('../../libs/components/community/TViewer'), { ssr: false });
 
 export { getStaticProps } from '../../libs/getStaticProps';
 
-const CommunityDetail: NextPage = ({ initialInput, ...props }: T) => {
+interface CommunityDetailProps { initialInput: CommentsInquiry; }
+const CommunityDetail: NextPage<CommunityDetailProps> = ({ initialInput }) => {
 	const device = useDeviceDetect();
 	const router = useRouter();
 	const { query } = router;
 
-	const articleId = query?.id as string;
-	const articleCategory = query?.articleCategory as string;
+	const rawId = query?.id;
+	const articleId = Array.isArray(rawId) ? rawId[0] : (rawId ?? '');
+	const articleCategory = (query?.articleCategory as string | undefined) ?? '';
 
 	const [comment, setComment] = useState<string>('');
 	const [wordsCnt, setWordsCnt] = useState<number>(0);
 	const [updatedCommentWordsCnt, setUpdatedCommentWordsCnt] = useState<number>(0);
 	const user = useReactiveVar(userVar);
-	const [comments, setComments] = useState<Comment[]>([]);
-	const [total, setTotal] = useState<number>(0);
-	const [searchFilter, setSearchFilter] = useState<CommentsInquiry>({
-		...initialInput,
-	});
-	const [memberImage, setMemberImage] = useState<string>('/img/community/articleImg.png');
-	const [anchorEl, setAnchorEl] = useState<any | null>(null);
+	const [searchFilter, setSearchFilter] = useState<CommentsInquiry>({ ...initialInput });
+	const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 	const open = Boolean(anchorEl);
 	const id = open ? 'simple-popover' : undefined;
 	const [openBackdrop, setOpenBackdrop] = useState<boolean>(false);
 	const [updatedComment, setUpdatedComment] = useState<string>('');
 	const [updatedCommentId, setUpdatedCommentId] = useState<string>('');
 	const [likeLoading, setLikeLoading] = useState<boolean>(false);
-	const [boardArticle, setBoardArticle] = useState<BoardArticle>();
 
 	/** APOLLO REQUESTS **/
 
@@ -73,36 +70,33 @@ const CommunityDetail: NextPage = ({ initialInput, ...props }: T) => {
 		data: boardArticleData,
 		error: boardArticleError,
 		refetch: boardArticleRefetch,
-	} = useQuery(GET_BOARD_ARTICLE, {
-		fetchPolicy: 'network-only',
+	} = useQuery<{ getBoardArticle: BoardArticle }>(GET_BOARD_ARTICLE, {
+		fetchPolicy: 'cache-and-network',
 		variables: { input: articleId },
-		notifyOnNetworkStatusChange: true,
-		onCompleted: (data: any) => {
-			setBoardArticle(data?.getBoardArticle);
-			if (data?.getBoardArticle?.memberData?.memberImage) {
-				setMemberImage(`${REACT_APP_API_URL}/${data?.getBoardArticle?.memberData?.memberImage}`);
-			}
-		},
+		skip: !articleId,
 	});
+
+	const boardArticle = boardArticleData?.getBoardArticle;
+	const memberImage = boardArticle?.memberData?.memberImage
+		? `${REACT_APP_API_URL}/${boardArticle.memberData.memberImage}`
+		: '/img/community/articleImg.png';
 
 	const {
 		loading: getCommentsLoading,
 		data: getCommentsData,
 		error: getCommentsError,
 		refetch: getCommentsRefetch,
-	} = useQuery(GET_COMMENTS, {
+	} = useQuery<{ getComments: Comments }>(GET_COMMENTS, {
 		fetchPolicy: 'cache-and-network',
 		variables: { input: searchFilter },
-		notifyOnNetworkStatusChange: true,
-		onCompleted: (data: any) => {
-			setComments(data?.getComments?.list);
-			setTotal(data?.getComments?.metaCounter?.[0]?.total || 0);
-		},
 	});
+
+	const comments = getCommentsData?.getComments?.list ?? [];
+	const total = getCommentsData?.getComments?.metaCounter?.[0]?.total ?? 0;
 
 	/** LIFECYCLES **/
 	useEffect(() => {
-		if (articleId) setSearchFilter({ ...searchFilter, search: { commentRefId: articleId } });
+		if (articleId) setSearchFilter((prev) => ({ ...prev, search: { commentRefId: articleId } }));
 	}, [articleId]);
 
 	/** HANDLERS **/
@@ -117,7 +111,7 @@ const CommunityDetail: NextPage = ({ initialInput, ...props }: T) => {
 		);
 	};
 
-	const likeBoArticleHandler = async (user: any, id: any) => {
+	const likeBoArticleHandler = async (user: CustomJwtPayload, id: string | undefined): Promise<void> => {
 		try {
 			if (likeLoading) return;
 			if (!id) return;
@@ -126,16 +120,15 @@ const CommunityDetail: NextPage = ({ initialInput, ...props }: T) => {
 			setLikeLoading(true);
 
 			await likeTargetBoardArticle({
-				variables: {
-					input: id,
-				},
+				variables: { input: id },
 			});
 
 			await boardArticleRefetch({ input: articleId });
 			await sweetTopSmallSuccessAlert('success', 800);
-		} catch (err: any) {
-			console.log('ERROR, likePropertyHandler:', err.message);
-			sweetMixinErrorAlert(err.message).then();
+		} catch (err: unknown) {
+			const message = err instanceof Error ? err.message : String(err);
+			console.log('ERROR, likeBoArticleHandler:', message);
+			sweetMixinErrorAlert(message).then();
 		} finally {
 			setLikeLoading(false);
 		}
@@ -162,9 +155,10 @@ const CommunityDetail: NextPage = ({ initialInput, ...props }: T) => {
 			setComment('');
 			await sweetMixinSuccessAlert('Successfully commented!');
 
-		} catch (err: any) {
-			console.log('ERROR, createCommentHandler:', err.message);
-			sweetMixinErrorAlert(err.message).then();
+		} catch (err: unknown) {
+			const message = err instanceof Error ? err.message : String(err);
+			console.log('ERROR, createCommentHandler:', message);
+			sweetMixinErrorAlert(message).then();
 		}
 	};
 
@@ -201,8 +195,9 @@ const CommunityDetail: NextPage = ({ initialInput, ...props }: T) => {
 				await sweetMixinSuccessAlert('Successfully updated!');
 			}
 			await getCommentsRefetch({ input: searchFilter });
-		} catch (error: any) {
-			sweetMixinErrorAlert(error.message);
+		} catch (error: unknown) {
+			const message = error instanceof Error ? error.message : String(error);
+			sweetMixinErrorAlert(message);
 		} finally {
 			setOpenBackdrop(false);
 			setUpdatedComment('');
@@ -216,7 +211,7 @@ const CommunityDetail: NextPage = ({ initialInput, ...props }: T) => {
 		else return '/img/community/articleImg.png';
 	};
 
-	const goMemberPage = (id: any) => {
+	const goMemberPage = (id: string | undefined) => {
 		if (id === user?._id) router.push('/mypage');
 		else router.push(`/member?memberId=${id}`);
 	};
@@ -233,7 +228,7 @@ const CommunityDetail: NextPage = ({ initialInput, ...props }: T) => {
 		setUpdatedComment(value);
 	};
 
-	const paginationHandler = (e: T, value: number) => {
+	const paginationHandler = (_e: React.ChangeEvent<unknown>, value: number) => {
 		setSearchFilter({ ...searchFilter, page: value });
 	};
 
@@ -348,7 +343,7 @@ const CommunityDetail: NextPage = ({ initialInput, ...props }: T) => {
 										</Stack>
 									</Stack>
 									<Stack>
-										<ToastViewerComponent markdown={boardArticle?.articleContent} className={'ytb_play'} />
+										<ToastViewerComponent markdown={boardArticle?.articleContent ?? ''} />
 									</Stack>
 									<Stack className="like-and-dislike">
 										<Stack className="top">
@@ -420,7 +415,7 @@ const CommunityDetail: NextPage = ({ initialInput, ...props }: T) => {
 																<DeleteForeverIcon sx={{ color: '#757575', cursor: 'pointer' }} />
 															</IconButton>
 															<IconButton
-																onClick={(e: any) => {
+																onClick={() => {
 																	setUpdatedComment(commentData?.commentContent);
 																	setUpdatedCommentWordsCnt(commentData?.commentContent?.length);
 																	setUpdatedCommentId(commentData?._id);
@@ -529,7 +524,7 @@ CommunityDetail.defaultProps = {
 		page: 1,
 		limit: 5,
 		sort: 'createdAt',
-		direction: 'DESC',
+		direction: Direction.DESC,
 		search: { commentRefId: '' },
 	},
 };

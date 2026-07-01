@@ -14,13 +14,14 @@ import MemberFollowings from '../../libs/components/member/MemberFollowings';
 import { userVar } from '../../apollo/store';
 import { Messages } from '../../libs/config';
 import { LIKE_TARGET_MEMBER, SUBSCRIBE, UNSUBSCRIBE } from '../../apollo/user/mutation';
+import { FollowInquiry } from '../../libs/types/follow/follow.input';
 
 export { getStaticProps } from '../../libs/getStaticProps';
 
 const MemberPage: NextPage = () => {
 	const device = useDeviceDetect();
 	const router = useRouter();
-	const category: any = router.query?.category;
+	const category = router.query?.category;
 	const user = useReactiveVar(userVar);
 
 	/** APOLLO REQUESTS **/
@@ -44,7 +45,9 @@ const MemberPage: NextPage = () => {
 	}, [category, router]);
 
 	/** HANDLERS **/
-	const subscribeHandler = async (id: string, refetch: any, query: any) => {
+	type RefetchFn = (variables?: { input: FollowInquiry }) => Promise<unknown>;
+
+	const subscribeHandler = async (id: string | undefined, refetch: RefetchFn, query: unknown): Promise<void> => {
 		try {
 			console.log('id: ', id);
 			if (!id) throw new Error(Messages.error1);
@@ -56,29 +59,29 @@ const MemberPage: NextPage = () => {
 				},
 			});
 			await sweetTopSmallSuccessAlert('Followed!', 800);
-			await refetch({ input: query });
-		} catch (err: any) {
+			await refetch({ input: query as FollowInquiry });
+		} catch (err: unknown) {
 			sweetErrorHandling(err).then();
 		}
 	};
 
-	const unsubscribeHandler = async (id: string, refetch: any, query: any) => {
+	const unsubscribeHandler = async (id: string | undefined, refetch: RefetchFn, query: unknown): Promise<void> => {
 		try {
 			if (!id) throw new Error(Messages.error1);
 			if (!user._id) throw new Error(Messages.error2);
 
-	await unsubscribe({
+			await unsubscribe({
 				variables: {
 					input: id,
 				},
 			});
 			await sweetTopSmallSuccessAlert('Unfollowed!', 800);
-			await refetch({ input: query });
-		} catch (err: any) {
+			await refetch({ input: query as FollowInquiry });
+		} catch (err: unknown) {
 			sweetErrorHandling(err).then();
 		}
 	};
-	const likeMemberHandler = async (id: string, refetch: any, query: any) => {
+	const likeMemberHandler = async (id: string | undefined, refetch: RefetchFn, query: unknown): Promise<void> => {
 		try {
 			if (!id) return;
 			if (!user._id) throw new Error(Messages.error2);
@@ -86,14 +89,16 @@ const MemberPage: NextPage = () => {
 			await likeTargetMember({ variables: { input: id } });
 
 			await sweetTopSmallSuccessAlert('Success!', 800);
-			await refetch({ input: query });
-		} catch (err: any) {
-			console.log('ERROR, likeMemberHandler:', err.message);
-			sweetMixinErrorAlert(err.message).then();
+			await refetch({ input: query as FollowInquiry });
+		} catch (err: unknown) {
+			const message = err instanceof Error ? err.message : String(err);
+			console.log('ERROR, likeMemberHandler:', message);
+			sweetMixinErrorAlert(message).then();
 		}
 	};
 
-	const redirectToMemberPageHandler = async (memberId: string) => {
+	const redirectToMemberPageHandler = async (memberId: string | undefined) => {
+		if (!memberId) return;
 		try {
 			if (memberId === user?._id) await router.push(`/mypage?memberId=${memberId}`);
 			else await router.push(`/member?memberId=${memberId}`);

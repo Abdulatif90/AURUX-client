@@ -95,10 +95,10 @@ const headCells: readonly HeadCell[] = [
 ];
 
 interface EnhancedTableProps {
-	numSelected: number;
-	onRequestSort: (event: React.MouseEvent<unknown>, property: keyof Data) => void;
-	onSelectAllClick: (event: React.ChangeEvent<HTMLInputElement>) => void;
-	rowCount: number;
+	numSelected?: number;
+	onRequestSort?: (event: React.MouseEvent<unknown>, property: keyof Data) => void;
+	onSelectAllClick?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+	rowCount?: number;
 }
 
 function EnhancedTableHead(props: EnhancedTableProps) {
@@ -121,22 +121,25 @@ function EnhancedTableHead(props: EnhancedTableProps) {
 
 interface CommunityArticleListProps {
 	articles: BoardArticle[] | undefined;
-	anchorEl: any;
-	menuIconClickHandler: any;
-	menuIconCloseHandler: any;
-	updateArticleHandler: any;
-	removeArticleHandler: any;
+	anchorEl: (HTMLElement | null)[];
+	menuIconClickHandler: (e: React.MouseEvent<HTMLButtonElement>, index: number) => void;
+	menuIconCloseHandler: () => void;
+	updateArticleHandler: (input: { _id: string; articleStatus: string }) => void;
+	removeArticleHandler: (id: string) => void;
 }
 
 const CommunityArticleList = (props: CommunityArticleListProps) => {
 	const { articles, anchorEl, menuIconClickHandler, menuIconCloseHandler, updateArticleHandler, removeArticleHandler } =
 		props;
 
+	/** APOLLO REQUESTS **/
+	/** LIFECYCLES **/
+	/** HANDLERS **/
+
 	return (
 		<Stack>
 			<TableContainer>
 				<Table sx={{ minWidth: 750 }} aria-labelledby="tableTitle" size={'medium'}>
-					{/*@ts-ignore*/}
 					<EnhancedTableHead />
 					<TableBody>
 						{(!articles || articles.length === 0) && (
@@ -199,7 +202,7 @@ const CommunityArticleList = (props: CommunityArticleListProps) => {
 											</Button>
 										) : (
 											<>
-												<Button onClick={(e: any) => menuIconClickHandler(e, index)} className={'badge success'}>
+												<Button onClick={(e: React.MouseEvent<HTMLButtonElement>) => menuIconClickHandler(e, index)} className={'badge success'}>
 													{article.articleStatus}
 												</Button>
 

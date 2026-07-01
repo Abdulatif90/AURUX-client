@@ -7,12 +7,11 @@ import * as THREE from 'three';
 
 // Memoize Image component to prevent unnecessary re-renders
 const Image = React.memo((props: any) => {
-	const ref = useRef<THREE.Group>();
-	const group = useRef<THREE.Group>();
+	const ref = useRef<THREE.Group>(null!);
+	const group = useRef<THREE.Group>(null!);
 
 	return (
-		// @ts-ignore
-		<group ref={group}>
+		<group ref={group as React.Ref<THREE.Group>}>
 			<ImageImpl ref={ref} {...props} />
 		</group>
 	);

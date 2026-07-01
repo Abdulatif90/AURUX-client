@@ -1,16 +1,17 @@
-import React, { useState } from 'react';
-import { useRouter } from 'next/router';
+import React from 'react';
 import { Stack, Box } from '@mui/material';
 import useDeviceDetect from '../../hooks/useDeviceDetect';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, Navigation, Pagination } from 'swiper';
+
+const SWIPER_MODULES_MOBILE = [Autoplay];
+const SWIPER_MODULES_PC = [Autoplay, Navigation, Pagination];
 import TopAgentCard from './TopAgentCard';
-import { Member } from '../../types/member/member';
+import { Member, Members } from '../../types/member/member';
 import { AgentsInquiry } from '../../types/member/member.input';
 import { GET_AGENTS } from '../../../apollo/user/query';
 import { useQuery } from '@apollo/client';
-import { T } from '../../types/common';
 
 interface TopAgentsProps {
 	initialInput: AgentsInquiry;
@@ -19,24 +20,14 @@ interface TopAgentsProps {
 const TopAgents = (props: TopAgentsProps) => {
 	const { initialInput } = props;
 	const device = useDeviceDetect();
-	const router = useRouter();
-	const [topAgents, setTopAgents] = useState<Member[]>([]);
-
 	/** APOLLO REQUESTS **/
 
-	const {
-		loading: getAgentsLoading,
-		data: getAgentsData,
-		error: getAgentsError,
-		refetch: getAgentsRefetch,
-	} = useQuery(GET_AGENTS, {
-		fetchPolicy: 'cache-and-network',
+	const { data: getAgentsData } = useQuery<{ getAgents: Members }>(GET_AGENTS, {
+		fetchPolicy: 'cache-first',
 		variables: { input: initialInput },
-		notifyOnNetworkStatusChange: true,
-		onCompleted: (data: T) => {
-			setTopAgents(data?.getAgents?.list);
-		},
 	});
+
+	const topAgents = getAgentsData?.getAgents?.list ?? [];
 	
 	/** HANDLERS **/
 
@@ -53,7 +44,7 @@ const TopAgents = (props: TopAgentsProps) => {
 							slidesPerView={'auto'}
 							centeredSlides={true}
 							spaceBetween={29}
-							modules={[Autoplay]}
+							modules={SWIPER_MODULES_MOBILE}
 						>
 							{topAgents.map((agent: Member) => {
 								return (
@@ -92,7 +83,7 @@ const TopAgents = (props: TopAgentsProps) => {
 								className={'top-agents-swiper'}
 								slidesPerView={'auto'}
 								spaceBetween={29}
-								modules={[Autoplay, Navigation, Pagination]}
+								modules={SWIPER_MODULES_PC}
 								navigation={{
 									nextEl: '.swiper-agents-next',
 									prevEl: '.swiper-agents-prev',
@@ -127,4 +118,4 @@ TopAgents.defaultProps = {
 	},
 };
 
-export default TopAgents;
+export default React.memo(TopAgents);

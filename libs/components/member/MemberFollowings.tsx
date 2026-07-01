@@ -3,31 +3,29 @@ import { Box, Button, Pagination, Stack, Typography } from '@mui/material';
 import useDeviceDetect from '../../hooks/useDeviceDetect';
 import { useRouter } from 'next/router';
 import { FollowInquiry } from '../../types/follow/follow.input';
-import { useQuery, useReactiveVar } from '@apollo/client';
-import { Following } from '../../types/follow/follow';
+import { ApolloQueryResult, useQuery, useReactiveVar } from '@apollo/client';
+import { Following, Followings } from '../../types/follow/follow';
 import { REACT_APP_API_URL } from '../../config';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import { userVar } from '../../../apollo/store';
 import { GET_MEMBER_FOLLOWINGS } from '../../../apollo/user/query';
-import { T } from '../../types/common';
+type FollowingRefetch = (vars?: { input: FollowInquiry }) => Promise<ApolloQueryResult<{ getMemberFollowings: Followings }>>;
 
 interface MemberFollowingsProps {
 	initialInput: FollowInquiry;
-	subscribeHandler: any;
-	unsubscribeHandler: any;
-	redirectToMemberPageHandler: any;
-	likeMemberHandler: any;
+	subscribeHandler: (id: string | undefined, refetch: FollowingRefetch, inquiry: FollowInquiry) => void;
+	unsubscribeHandler: (id: string | undefined, refetch: FollowingRefetch, inquiry: FollowInquiry) => void;
+	redirectToMemberPageHandler: (id: string | undefined) => void;
+	likeMemberHandler: (id: string | undefined, refetch: FollowingRefetch, inquiry: FollowInquiry) => void;
 }
 
 const MemberFollowings = (props: MemberFollowingsProps) => {
 	const { initialInput, subscribeHandler, unsubscribeHandler, redirectToMemberPageHandler, likeMemberHandler } = props;
 	const device = useDeviceDetect();
 	const router = useRouter();
-	const [total, setTotal] = useState<number>(0);
-	const category: any = router.query?.category ?? 'properties';
+	const category = (router.query?.category as string | undefined) ?? 'properties';
 	const [followInquiry, setFollowInquiry] = useState<FollowInquiry>(initialInput);
-	const [memberFollowings, setMemberFollowings] = useState<Following[]>([]);
 	const user = useReactiveVar(userVar);
 
 	/** APOLLO REQUESTS **/
@@ -36,33 +34,33 @@ const MemberFollowings = (props: MemberFollowingsProps) => {
 		data: getMemberFollowingsData,
 		error: getMemberFollowingsError,
 		refetch: getMemberFollowingsRefetch,
-	} = useQuery(GET_MEMBER_FOLLOWINGS, {
-		fetchPolicy: 'network-only',
+	} = useQuery<{ getMemberFollowings: Followings }>(GET_MEMBER_FOLLOWINGS, {
+		fetchPolicy: 'cache-and-network',
 		variables: { input: followInquiry },
 		skip: !followInquiry?.search?.followerId,
-		notifyOnNetworkStatusChange: true,
-		onCompleted: (data: T) => {
-			setMemberFollowings(data?.getMemberFollowings?.list);
-			setTotal(data?.getMemberFollowings?.metaCounter[0]?.total);
-		},
 	});
+
+	const memberFollowings = getMemberFollowingsData?.getMemberFollowings?.list ?? [];
+	const total = getMemberFollowingsData?.getMemberFollowings?.metaCounter?.[0]?.total ?? 0;
 
 	/** LIFECYCLES **/
 	useEffect(() => {
-		if (router.query.memberId)
-			setFollowInquiry({ ...followInquiry, search: { followerId: router.query.memberId as string } });
-		else setFollowInquiry({ ...followInquiry, search: { followerId: user?._id } });
-	}, [router]);
-
-	useEffect(() => {
-		getMemberFollowingsRefetch({ input: followInquiry }).then();
-	}, [followInquiry]);
+		const memberId = router.query.memberId;
+		if (memberId) {
+			const id = Array.isArray(memberId) ? memberId[0] : memberId;
+			setFollowInquiry({ ...initialInput, search: { followerId: id } });
+		} else {
+			setFollowInquiry({ ...initialInput, search: { followerId: user?._id } });
+		}
+	}, [router.query.memberId, user?._id, initialInput]);
 
 	/** HANDLERS **/
-	const paginationHandler = async (event: ChangeEvent<unknown>, value: number) => {
-		followInquiry.page = value;
-		setFollowInquiry({ ...followInquiry });
+	const paginationHandler = (_event: ChangeEvent<unknown>, value: number): void => {
+		setFollowInquiry({ ...followInquiry, page: value });
 	};
+
+	if (getMemberFollowingsLoading) return <div id="member-follows-page"><p>Loading...</p></div>;
+	if (getMemberFollowingsError) return <div id="member-follows-page"><p>Failed to load followings.</p></div>;
 
 	if (device === 'mobile') {
 		return <div>AURUX FOLLOWS MOBILE</div>;

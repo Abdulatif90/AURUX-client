@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import useDeviceDetect from '../../hooks/useDeviceDetect';
 import { Box } from '@mui/material';
 import Moment from 'react-moment';
@@ -39,7 +40,7 @@ const CommunityCard = (props: CommunityCardProps) => {
 				<>
 					<Link href={`/community/detail?articleCategory=${article?.articleCategory}&id=${article?._id}`}>
 						<Box component={'div'} className="horizontal-card">
-							<img src={articleImage} alt="" />
+							<Image src={articleImage} alt={article?.articleTitle ?? ''} width={80} height={60} style={{ objectFit: 'cover' }} />
 							<div>
 								<strong>{article.articleTitle}</strong>
 								<span>
@@ -54,4 +55,4 @@ const CommunityCard = (props: CommunityCardProps) => {
 	}
 };
 
-export default CommunityCard;
+export default React.memo(CommunityCard);

@@ -3,50 +3,62 @@ import { NextPage } from 'next';
 import { Pagination, Stack, Typography } from '@mui/material';
 import useDeviceDetect from '../../hooks/useDeviceDetect';
 import { PropertyCard } from '../mypage/PropertyCard';
-import { Property } from '../../types/property/property';
+import { Properties, Property } from '../../types/property/property';
 import { PropertiesInquiry } from '../../types/property/property.input';
-import { T } from '../../types/common';
 import { useRouter } from 'next/router';
 import { useQuery } from '@apollo/client';
 import { GET_PROPERTIES } from '../../../apollo/user/query';
 
-const MyProperties: NextPage = ({ initialInput, ...props }: any) => {
+interface MemberPropertiesProps {
+	initialInput?: PropertiesInquiry;
+}
+
+const defaultInitialInput: PropertiesInquiry = {
+	page: 1,
+	limit: 5,
+	sort: 'createdAt',
+	search: { memberId: '' },
+};
+
+const MyProperties: NextPage<MemberPropertiesProps> = ({ initialInput = defaultInitialInput }: MemberPropertiesProps) => {
 	const device = useDeviceDetect();
 	const router = useRouter();
 	const { memberId } = router.query;
 	const [searchFilter, setSearchFilter] = useState<PropertiesInquiry>({ ...initialInput });
-	const [agentProperties, setAgentProperties] = useState<Property[]>([]);
-	const [total, setTotal] = useState<number>(0);
-
 	/** APOLLO REQUESTS **/
 	const {
 		loading: getPropertiesLoading,
 		data: getPropertiesData,
 		error: getPropertiesError,
-		refetch: getPropertiesRefetch,
-	} = useQuery(GET_PROPERTIES, {
-		fetchPolicy: 'network-only',
+	} = useQuery<{ getProperties: Properties }>(GET_PROPERTIES, {
+		fetchPolicy: 'cache-and-network',
 		variables: { input: searchFilter },
 		skip: !searchFilter?.search?.memberId,
-		notifyOnNetworkStatusChange: true,
-		onCompleted: (data: any) => {
-			setAgentProperties(data?.getProperties?.list);
-			setTotal(data?.getProperties?.metaCounter[0]?.total ?? 0);
-		},
 	});
 
-	/** LIFECYCLES **/
-	useEffect(() => {}, [searchFilter]);
+	const agentProperties = getPropertiesData?.getProperties?.list ?? [];
+	const total = getPropertiesData?.getProperties?.metaCounter?.[0]?.total ?? 0;
 
+	/** LIFECYCLES **/
 	useEffect(() => {
-		if (memberId)
-			setSearchFilter({ ...initialInput, search: { ...initialInput.search, memberId: memberId as string } });
-	}, [memberId]);
+		if (memberId) {
+			const id = Array.isArray(memberId) ? memberId[0] : memberId;
+			setSearchFilter({ ...initialInput, search: { ...initialInput.search, memberId: id } });
+		}
+	}, [memberId, initialInput]);
 
 	/** HANDLERS **/
-	const paginationHandler = (e: T, value: number) => {
+	const paginationHandler = (_event: React.ChangeEvent<unknown>, value: number): void => {
 		setSearchFilter({ ...searchFilter, page: value });
 	};
+
+	if (getPropertiesLoading) {
+		return <div id="member-properties-page"><p>Loading...</p></div>;
+	}
+
+	if (getPropertiesError) {
+		return <div id="member-properties-page"><p>Failed to load properties.</p></div>;
+	}
 
 	if (device === 'mobile') {
 		return <div>AURUX PROPERTIES MOBILE</div>;
@@ -99,17 +111,6 @@ const MyProperties: NextPage = ({ initialInput, ...props }: any) => {
 			</div>
 		);
 	}
-};
-
-MyProperties.defaultProps = {
-	initialInput: {
-		page: 1,
-		limit: 5,
-		sort: 'createdAt',
-		search: {
-			memberId: '',
-		},
-	},
 };
 
 export default MyProperties;

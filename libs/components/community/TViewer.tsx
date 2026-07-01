@@ -2,28 +2,30 @@ import React, { useEffect, useState } from 'react';
 import '@toast-ui/editor/dist/toastui-editor.css';
 import { Viewer } from '@toast-ui/react-editor';
 import { Box, Stack, CircularProgress } from '@mui/material';
+import { HTMLMdNode } from '@toast-ui/editor/types/markdown';
+import { Context as MdContext } from '@toast-ui/editor/types/toastmark';
 
-const TViewer = (props: any) => {
-	const [editorLoaded, setEditorLoaded] = useState(false);
+interface TViewerProps {
+	markdown: string;
+}
+
+const TViewer = ({ markdown }: TViewerProps) => {
+	const [isMounted, setIsMounted] = useState(false);
 
 	/** LIFECYCLES **/
 	useEffect(() => {
-		if (props.markdown) {
-			setEditorLoaded(true);
-		} else {
-			setEditorLoaded(false);
-		}
-	}, [props.markdown]);
+		setIsMounted(true);
+	}, []);
 
 	return (
 		<Stack sx={{ background: 'white', mt: '30px', borderRadius: '10px' }}>
 			<Box component={'div'} sx={{ m: '40px' }}>
-				{editorLoaded ? (
+				{isMounted && markdown ? (
 					<Viewer
-						initialValue={props.markdown}
+						initialValue={markdown}
 						customHTMLRenderer={{
 							htmlBlock: {
-								iframe(node: any) {
+								iframe(node: HTMLMdNode) {
 									return [
 										{
 											type: 'openTag',
@@ -35,7 +37,7 @@ const TViewer = (props: any) => {
 										{ type: 'closeTag', tagName: 'iframe', outerNewLine: true },
 									];
 								},
-								div(node: any) {
+								div(node: HTMLMdNode) {
 									return [
 										{ type: 'openTag', tagName: 'div', outerNewLine: true, attributes: node.attrs },
 										{ type: 'html', content: node.childrenHTML ?? '' },
@@ -44,7 +46,7 @@ const TViewer = (props: any) => {
 								},
 							},
 							htmlInline: {
-								big(node: any, { entering }: any) {
+								big(node: HTMLMdNode, { entering }: MdContext) {
 									return entering
 										? { type: 'openTag', tagName: 'big', attributes: node.attrs }
 										: { type: 'closeTag', tagName: 'big' };

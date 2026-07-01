@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import React from 'react';
 import { Stack, Box, Divider, Typography } from '@mui/material';
 import IconButton from '@mui/material/IconButton';
 import useDeviceDetect from '../../hooks/useDeviceDetect';
@@ -6,9 +6,6 @@ import { Property } from '../../types/property/property';
 import RemoveRedEyeIcon from '@mui/icons-material/RemoveRedEye';
 import { REACT_APP_API_URL, topPropertyRank } from '../../config';
 import { useRouter } from 'next/router';
-import { useReactiveVar } from '@apollo/client';
-import { userVar } from '../../../apollo/store';
-
 interface PopularPropertyCardProps {
 	property: Property;
 }
@@ -17,13 +14,11 @@ const PopularPropertyCard = (props: PopularPropertyCardProps) => {
 	const { property } = props;
 	const device = useDeviceDetect();
 	const router = useRouter();
-	const user = useReactiveVar(userVar);
 
 	/** HANDLERS **/
 
-const pushDetailHandler = async (propertyId: string) => {
-	console.log('property id:', propertyId);
-	await router.push({ pathname: '/property/detail', query: { id: propertyId } });
+	const pushDetailHandler = async (propertyId: string) => {
+		await router.push({ pathname: '/property/detail', query: { id: propertyId } });
 	};
 
 	if (device === 'mobile') {
@@ -140,4 +135,4 @@ const pushDetailHandler = async (propertyId: string) => {
 	}
 };
 
-export default PopularPropertyCard;
+export default React.memo(PopularPropertyCard);

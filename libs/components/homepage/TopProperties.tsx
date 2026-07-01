@@ -1,14 +1,17 @@
-import React, { useState } from 'react';
+import React, { useCallback } from 'react';
 import { Stack, Box } from '@mui/material';
 import useDeviceDetect from '../../hooks/useDeviceDetect';
 import WestIcon from '@mui/icons-material/West';
 import EastIcon from '@mui/icons-material/East';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, Navigation, Pagination } from 'swiper';
+
+const SWIPER_MODULES_MOBILE = [Autoplay];
+const SWIPER_MODULES_PC = [Autoplay, Navigation, Pagination];
 import TopPropertyCard from './TopPropertyCard';
 import { PropertiesInquiry } from '../../types/property/property.input';
-import { Property } from '../../types/property/property';
-import { T } from '../../types/common';
+import { Properties, Property } from '../../types/property/property';
+import { CustomJwtPayload } from '../../types/customJwtPayload';
 import { useMutation, useQuery } from '@apollo/client';
 import { GET_PROPERTIES } from '../../../apollo/user/query';
 import { sweetMixinErrorAlert, sweetTopSmallSuccessAlert } from '../../sweetAlert';
@@ -22,44 +25,34 @@ interface TopPropertiesProps {
 const TopProperties = (props: TopPropertiesProps) => {
 	const { initialInput } = props;
 	const device = useDeviceDetect();
-	const [topProperties, setTopProperties] = useState<Property[]>([]);
-
 	/** APOLLO REQUESTS **/
 	const [likeTargetProperty] = useMutation(LIKE_TARGET_PROPERTY);
 
 	const {
-		loading: getPropertiesLoading,
 		data: getPropertiesData,
-		error: getPropertiesError,
 		refetch: getPropertiesRefetch,
-	} = useQuery(GET_PROPERTIES, {
-		fetchPolicy: 'cache-and-network',
+	} = useQuery<{ getProperties: Properties }>(GET_PROPERTIES, {
+		fetchPolicy: 'cache-first',
 		variables: { input: initialInput },
-		notifyOnNetworkStatusChange: true,
-		onCompleted: (data: T) => {
-			setTopProperties(data?.getProperties?.list);
-		},
 	});
+
+	const topProperties = getPropertiesData?.getProperties?.list ?? [];
 
 	/** HANDLERS **/
 
-		const likePropertyHandler = async (user: T, id: string) => {
+	const likePropertyHandler = useCallback(async (user: CustomJwtPayload, id: string): Promise<void> => {
 		try {
 			if (!id) return;
 			if (!user._id) throw new Error(Message.NOT_AUTHENTICATED);
 
-			await likeTargetProperty({
-				variables: { input: id },
-			});
-
+			await likeTargetProperty({ variables: { input: id } });
 			await getPropertiesRefetch({ input: initialInput });
-
-			// Alert removed - no notification on like
-		} catch (err: any) {
-			console.log('Error, likePropertyHandler', err.message);
-			sweetMixinErrorAlert(err.message).then();
+		} catch (err: unknown) {
+			const message = err instanceof Error ? err.message : Message.SOMETHING_WENT_WRONG;
+			console.log('Error, likePropertyHandler', message);
+			sweetMixinErrorAlert(message).then();
 		}
-	};
+	}, [likeTargetProperty, getPropertiesRefetch, initialInput]);
 
 	if (device === 'mobile') {
 		return (
@@ -74,7 +67,7 @@ const TopProperties = (props: TopPropertiesProps) => {
 							slidesPerView={'auto'}
 							centeredSlides={true}
 							spaceBetween={15}
-							modules={[Autoplay]}
+							modules={SWIPER_MODULES_MOBILE}
 						>
 							{topProperties.map((property: Property) => {
 								return (
@@ -110,7 +103,7 @@ const TopProperties = (props: TopPropertiesProps) => {
 							className={'top-property-swiper'}
 							slidesPerView={'auto'}
 							spaceBetween={15}
-							modules={[Autoplay, Navigation, Pagination]}
+							modules={SWIPER_MODULES_PC}
 							navigation={{
 								nextEl: '.swiper-top-next',
 								prevEl: '.swiper-top-prev',
@@ -144,4 +137,4 @@ TopProperties.defaultProps = {
 	},
 };
 
-export default TopProperties;
+export default React.memo(TopProperties);

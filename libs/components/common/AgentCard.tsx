@@ -9,11 +9,12 @@ import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import { useReactiveVar } from '@apollo/client';
 import { userVar } from '../../../apollo/store';
-import property from '../../../pages/property';
+import { Member } from '../../types/member/member';
+import { CustomJwtPayload } from '../../types/customJwtPayload';
 
 interface AgentCardProps {
-	agent: any;
-	likeMemberHandler: any;
+	agent: Member;
+	likeMemberHandler: (user: CustomJwtPayload, id: string) => Promise<void>;
 }
 
 const AgentCard = (props: AgentCardProps) => {
@@ -54,7 +55,7 @@ const AgentCard = (props: AgentCardProps) => {
 						<Link
 							href={{
 								pathname: '/agent/detail',
-								query: { agentId: 'id' },
+								query: { agentId: agent?._id },
 							}}
 						>
 							<strong>{agent?.memberFullName ?? agent?.memberNick}</strong>

@@ -5,7 +5,7 @@ import { Stack } from '@mui/material';
 const Advertisement = () => {
 	const device = useDeviceDetect();
 
-	if (device == 'mobile') {
+	if (device === 'mobile') {
 		return (
 			<Stack className={'video-frame'}>
 				<video

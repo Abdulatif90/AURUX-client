@@ -13,19 +13,19 @@ import WestIcon from '@mui/icons-material/West';
 import EastIcon from '@mui/icons-material/East';
 import { useMutation, useQuery, useReactiveVar } from '@apollo/client';
 import { useRouter } from 'next/router';
-import { Property } from '../../libs/types/property/property';
+import { Properties, Property } from '../../libs/types/property/property';
 import moment from 'moment';
 import { formatterStr } from '../../libs/utils';
 import { REACT_APP_API_URL } from '../../libs/config';
 import { userVar } from '../../apollo/store';
 import { CommentInput, CommentsInquiry } from '../../libs/types/comment/comment.input';
-import { Comment } from '../../libs/types/comment/comment';
+import { Comment, Comments } from '../../libs/types/comment/comment';
 import { CommentGroup } from '../../libs/enums/comment.enum';
 import { Pagination as MuiPagination } from '@mui/material';
 import Link from 'next/link';
 import RemoveRedEyeIcon from '@mui/icons-material/RemoveRedEye';
 import { GET_PROPERTIES, GET_PROPERTY, GET_COMMENTS } from '../../apollo/user/query';
-import { T } from '../../libs/types/common';
+import { CustomJwtPayload } from '../../libs/types/customJwtPayload';
 import { Direction, Message } from '../../libs/enums/common.enum';
 import { sweetMixinErrorAlert, sweetTopSmallSuccessAlert } from '../../libs/sweetAlert';
 import { CREATE_COMMENT, LIKE_TARGET_PROPERTY } from '../../apollo/user/mutation';
@@ -36,7 +36,8 @@ SwiperCore.use([Autoplay, Navigation, Pagination]);
 
 export { getStaticProps } from '../../libs/getStaticProps';
 
-const PropertyDetail: NextPage = ({ initialComment, ...props }: any) => {
+interface PropertyDetailProps { initialComment: CommentsInquiry; }
+const PropertyDetail: NextPage<PropertyDetailProps> = ({ initialComment }) => {
 	const device = useDeviceDetect();
 	const router = useRouter();
 	const user = useReactiveVar(userVar);
@@ -63,12 +64,11 @@ const PropertyDetail: NextPage = ({ initialComment, ...props }: any) => {
 		data: getPropertyData,
 		error: getPropertyError,
 		refetch: getPropertyRefetch,
-	} = useQuery(GET_PROPERTY, {
-		fetchPolicy: 'network-only',
+	} = useQuery<{ getProperty: Property }>(GET_PROPERTY, {
+		fetchPolicy: 'cache-and-network',
 		variables: { input: propertyId },
 		skip: !propertyId,
-		notifyOnNetworkStatusChange: true,
-		onCompleted: (data: T) => {
+		onCompleted: (data: { getProperty: Property }) => {
 			if (data?.getProperty) setProperty(data?.getProperty);
 			if (data?.getProperty) setSlideImage(data?.getProperty?.propertyImages[0]);
 		},
@@ -79,7 +79,7 @@ const PropertyDetail: NextPage = ({ initialComment, ...props }: any) => {
 		data: getPropertiesData,
 		error: getPropertiesError,
 		refetch: getPropertiesRefetch,
-	} = useQuery(GET_PROPERTIES, {
+	} = useQuery<{ getProperties: Properties }>(GET_PROPERTIES, {
 		fetchPolicy: 'cache-and-network',
 		variables: {
 			input: {
@@ -93,8 +93,7 @@ const PropertyDetail: NextPage = ({ initialComment, ...props }: any) => {
 			},
 		},
 		skip: !propertyId && !property,
-		notifyOnNetworkStatusChange: true,
-		onCompleted: (data: T) => {
+		onCompleted: (data: { getProperties: Properties }) => {
 			if (data?.getProperties?.list) setDestinationProperties(data?.getProperties?.list);
 		},
 	});
@@ -104,12 +103,11 @@ const {
 		data: getCommentsData,
 		error: getCommentsError,
 		refetch: getCommentsRefetch,
-	} = useQuery(GET_COMMENTS, {
+	} = useQuery<{ getComments: Comments }>(GET_COMMENTS, {
 		fetchPolicy: 'cache-and-network',
 		variables: { input: initialComment },
 		skip: !commentInquiry.search.commentRefId,
-		notifyOnNetworkStatusChange: true,
-		onCompleted: (data: T) => {
+		onCompleted: (data: { getComments: Comments }) => {
 			if (data?.getComments?.list) setPropertyComments(data?.getComments?.list);
 			setCommentTotal(data?.getComments?.metaCounter[0]?.total ?? 0);
 		},
@@ -118,20 +116,14 @@ const {
 
 	/** LIFECYCLES **/
 	useEffect(() => {
-		if (router.query.id) {
-			setPropertyId(router.query.id as string);
-			setCommentInquiry({
-				...commentInquiry,
-				search: {
-					commentRefId: router.query.id as string,
-				},
-			});
-			setInsertCommentData({
-				...insertCommentData,
-				commentRefId: router.query.id as string,
-			});
+		const id = router.query.id;
+		if (id) {
+			const idStr = Array.isArray(id) ? id[0] : id;
+			setPropertyId(idStr);
+			setCommentInquiry((prev) => ({ ...prev, search: { commentRefId: idStr } }));
+			setInsertCommentData((prev) => ({ ...prev, commentRefId: idStr }));
 		}
-	}, [router]);
+	}, [router.query.id]);
 
 	useEffect(() => {
 		if (commentInquiry.search.commentRefId) {
@@ -144,7 +136,7 @@ const {
 		setSlideImage(image);
 	};
 
-	const likePropertyHandler = async (user: T, id: string) => {
+	const likePropertyHandler = async (user: CustomJwtPayload, id: string): Promise<void> => {
 		try {
 			if (!id) return;
 			if (!user._id) throw new Error(Message.NOT_AUTHENTICATED);
@@ -165,17 +157,15 @@ const {
 					},
 				},
 			});
-
-			// Alert removed - no notification on like
-		} catch (err: any) {
-			console.log('Error, likePropertyHandler', err.message);
-			sweetMixinErrorAlert(err.message).then();
+		} catch (err: unknown) {
+			const message = err instanceof Error ? err.message : String(err);
+			console.log('Error, likePropertyHandler', message);
+			sweetMixinErrorAlert(message).then();
 		}
 	};
 
-	const commentPaginationChangeHandler = async (event: ChangeEvent<unknown>, value: number) => {
-		commentInquiry.page = value;
-		setCommentInquiry({ ...commentInquiry });
+	const commentPaginationChangeHandler = async (_event: ChangeEvent<unknown>, value: number) => {
+		setCommentInquiry((prev) => ({ ...prev, page: value }));
 	};
 
 	const createCommentHandler = async () => {
@@ -280,8 +270,7 @@ const {
 											) : (
 												<FavoriteBorderIcon
 													fontSize={'medium'}
-													// @ts-ignore
-													onClick={() => likePropertyHandler(user, property?._id)}
+													onClick={() => { if (property?._id) likePropertyHandler(user, property._id); }}
 												/>
 											)}
 											<Typography>{property?.propertyLikes}</Typography>
@@ -502,8 +491,8 @@ const {
 									<Typography className={'main-title'}>Leave A Review</Typography>
 									<Typography className={'review-title'}>Review</Typography>
 									<textarea
-										onChange={({ target: { value } }: any) => {
-											setInsertCommentData({ ...insertCommentData, commentContent: value });
+										onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
+											setInsertCommentData({ ...insertCommentData, commentContent: e.target.value });
 										}}
 										value={insertCommentData.commentContent}
 									></textarea>
@@ -657,7 +646,7 @@ PropertyDetail.defaultProps = {
 		page: 1,
 		limit: 5,
 		sort: 'createdAt',
-		direction: 'DESC',
+		direction: Direction.DESC,
 		search: {
 			commentRefId: '',
 		},

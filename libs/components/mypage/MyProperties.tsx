@@ -1,12 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { NextPage } from 'next';
 import { Pagination, Stack, Typography } from '@mui/material';
 import useDeviceDetect from '../../hooks/useDeviceDetect';
 import { PropertyCard } from './PropertyCard';
 import { useMutation, useQuery, useReactiveVar } from '@apollo/client';
-import { Property } from '../../types/property/property';
+import { Properties, Property } from '../../types/property/property';
 import { AgentPropertiesInquiry } from '../../types/property/property.input';
-import { T } from '../../types/common';
 import { PropertyStatus } from '../../enums/property.enum';
 import { userVar } from '../../../apollo/store';
 import { useRouter } from 'next/router';
@@ -14,11 +13,22 @@ import { UPDATE_PROPERTY } from '../../../apollo/user/mutation';
 import { GET_AGENT_PROPERTIES } from '../../../apollo/user/query';
 import { sweetConfirmAlert, sweetErrorHandling } from '../../sweetAlert';
 
-const MyProperties: NextPage = ({ initialInput, ...props }: any) => {
+interface MyPropertiesProps {
+	initialInput?: AgentPropertiesInquiry;
+}
+
+const defaultMyPropertiesInput: AgentPropertiesInquiry = {
+	page: 1,
+	limit: 5,
+	sort: 'createdAt',
+	search: {
+		propertyStatus: PropertyStatus.ACTIVE,
+	},
+};
+
+const MyProperties: NextPage<MyPropertiesProps> = ({ initialInput = defaultMyPropertiesInput }: MyPropertiesProps) => {
 	const device = useDeviceDetect();
 	const [searchFilter, setSearchFilter] = useState<AgentPropertiesInquiry>(initialInput);
-	const [agentProperties, setAgentProperties] = useState<Property[]>([]);
-	const [total, setTotal] = useState<number>(0);
 	const user = useReactiveVar(userVar);
 	const router = useRouter();
 
@@ -30,18 +40,16 @@ const MyProperties: NextPage = ({ initialInput, ...props }: any) => {
 		data: getAgentPropertiesData,
 		error: getAgentPropertiesError,
 		refetch: getAgentPropertiesRefetch,
-	} = useQuery(GET_AGENT_PROPERTIES, {
-		fetchPolicy: 'network-only',
+	} = useQuery<{ getAgentProperties: Properties }>(GET_AGENT_PROPERTIES, {
+		fetchPolicy: 'cache-and-network',
 		variables: { input: searchFilter },
-		notifyOnNetworkStatusChange: true,
-		onCompleted: (data: T) => {
-			setAgentProperties(data?.getAgentProperties?.list);
-			setTotal(data?.getAgentProperties?.metaCounter[0]?.total ?? 0);
-		},
 	});
 
+	const agentProperties = getAgentPropertiesData?.getAgentProperties?.list ?? [];
+	const total = getAgentPropertiesData?.getAgentProperties?.metaCounter?.[0]?.total ?? 0;
+
 	/** HANDLERS **/
-	const paginationHandler = (e: T, value: number) => {
+	const paginationHandler = (_event: React.ChangeEvent<unknown>, value: number): void => {
 		setSearchFilter({ ...searchFilter, page: value });
 	};
 
@@ -56,14 +64,14 @@ const MyProperties: NextPage = ({ initialInput, ...props }: any) => {
 					variables: {
 						input: {
 							_id: id,
-							PropertyStatus: 'DELETE',
+							propertyStatus: PropertyStatus.DELETE,
 						},
 					},
 				});
 				await getAgentPropertiesRefetch({ input: searchFilter });
 			}
-		} catch (err: any) {
-			await sweetErrorHandling(err);
+		} catch (err: unknown) {
+			await sweetErrorHandling(err as Error);
 		}
 	};
 
@@ -80,14 +88,17 @@ const MyProperties: NextPage = ({ initialInput, ...props }: any) => {
 				});
 				await getAgentPropertiesRefetch({ input: searchFilter });
 			}
-		} catch (err: any) {
-			await sweetErrorHandling(err);
+		} catch (err: unknown) {
+			await sweetErrorHandling(err as Error);
 		}
 	};
 
-	if (user?.memberType !== 'AGENT') {
-		router.back();
-	}
+	useEffect(() => {
+		if (user?.memberType !== 'AGENT') router.back();
+	}, [user, router]);
+
+	if (getAgentPropertiesLoading) return <div id="my-property-page"><p>Loading...</p></div>;
+	if (getAgentPropertiesError) return <div id="my-property-page"><p>Failed to load properties.</p></div>;
 
 	if (device === 'mobile') {
 		return <div>AURUX PROPERTIES MOBILE</div>;
@@ -138,6 +149,7 @@ const MyProperties: NextPage = ({ initialInput, ...props }: any) => {
 										property={property}
 										deletePropertyHandler={deletePropertyHandler}
 										updatePropertyHandler={updatePropertyHandler}
+										key={property?._id}
 									/>
 								);
 							})
@@ -166,15 +178,5 @@ const MyProperties: NextPage = ({ initialInput, ...props }: any) => {
 	}
 };
 
-MyProperties.defaultProps = {
-	initialInput: {
-		page: 1,
-		limit: 5,
-		sort: 'createdAt',
-		search: {
-			propertyStatus: 'ACTIVE',
-		},
-	},
-};
 
 export default MyProperties;

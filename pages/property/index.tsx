@@ -7,26 +7,26 @@ import withLayoutBasic from '../../libs/components/layout/LayoutBasic';
 import Filter from '../../libs/components/property/Filter';
 import { useRouter } from 'next/router';
 import { PropertiesInquiry } from '../../libs/types/property/property.input';
-import { Property } from '../../libs/types/property/property';
+import { Properties, Property } from '../../libs/types/property/property';
+import { CustomJwtPayload } from '../../libs/types/customJwtPayload';
 import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
 import { Direction, Message } from '../../libs/enums/common.enum';
 import { GET_PROPERTIES } from '../../apollo/user/query';
-import { T } from '../../libs/types/common';
 import { useMutation, useQuery } from '@apollo/client';
 import { LIKE_TARGET_PROPERTY } from '../../apollo/user/mutation';
 import { sweetMixinErrorAlert, sweetTopSmallSuccessAlert } from '../../libs/sweetAlert';
 
 export { getStaticProps } from '../../libs/getStaticProps';
 
-const PropertyList: NextPage = ({ initialInput, ...props }: any) => {
+interface PropertyListProps { initialInput: PropertiesInquiry; }
+const PropertyList: NextPage<PropertyListProps> = ({ initialInput }) => {
 	const device = useDeviceDetect();
 	const router = useRouter();
 	const [searchFilter, setSearchFilter] = useState<PropertiesInquiry>(
-		router?.query?.input ? JSON.parse(router?.query?.input as string) : initialInput,
+		router.query.input
+			? JSON.parse(Array.isArray(router.query.input) ? router.query.input[0] : router.query.input)
+			: initialInput,
 	);
-	const [properties, setProperties] = useState<Property[]>([]);
-	const [total, setTotal] = useState<number>(0);
-	const [currentPage, setCurrentPage] = useState<number>(1);
 	const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 	const [sortingOpen, setSortingOpen] = useState(false);
 	const [filterSortName, setFilterSortName] = useState('New');
@@ -38,45 +38,34 @@ const PropertyList: NextPage = ({ initialInput, ...props }: any) => {
 		data: getPropertiesData,
 		error: getPropertiesError,
 		refetch: getPropertiesRefetch,
-	} = useQuery(GET_PROPERTIES, {
-		fetchPolicy: 'network-only',
+	} = useQuery<{ getProperties: Properties }>(GET_PROPERTIES, {
+		fetchPolicy: 'cache-and-network',
 		variables: { input: searchFilter },
-		notifyOnNetworkStatusChange: true,
-		onCompleted: (data: T) => {
-			setProperties(data?.getProperties?.list);
-			setTotal(data?.getProperties?.metaCounter[0]?.total);
-		},
 	});
-	
+
+	const properties = getPropertiesData?.getProperties?.list ?? [];
+	const total = getPropertiesData?.getProperties?.metaCounter?.[0]?.total ?? 0;
 
 	/** LIFECYCLES **/
 	useEffect(() => {
-		if (router.query.input) {
-			const inputObj = JSON.parse(router?.query?.input as string);
-			setSearchFilter(inputObj);
+		const input = router.query.input;
+		if (input) {
+			const inputStr = Array.isArray(input) ? input[0] : input;
+			setSearchFilter(JSON.parse(inputStr));
 		}
-
-		setCurrentPage(searchFilter.page === undefined ? 1 : searchFilter.page);
-	}, [router]);
-
-	useEffect(() => {
-	console.log("searchFilter:", searchFilter) 
-			// getPropertiesRefetch({ input: searchFilter }).then()
-	}, [searchFilter]);
+	}, [router.query.input]);
 
 	/** HANDLERS **/
-	const handlePaginationChange = async (event: ChangeEvent<unknown>, value: number) => {
-		searchFilter.page = value;
+	const handlePaginationChange = async (_event: ChangeEvent<unknown>, value: number) => {
+		const updated = { ...searchFilter, page: value };
 		await router.push(
-			`/property?input=${JSON.stringify(searchFilter)}`,
-			`/property?input=${JSON.stringify(searchFilter)}`,
-			{
-				scroll: false,
-			},
+			`/property?input=${JSON.stringify(updated)}`,
+			`/property?input=${JSON.stringify(updated)}`,
+			{ scroll: false },
 		);
-		setCurrentPage(value);
 	};
-	const likePropertyHandler = async (user: T, id: string) => {
+
+	const likePropertyHandler = async (user: CustomJwtPayload, id: string): Promise<void> => {
 		try {
 			if (!id) return;
 			if (!user._id) throw new Error(Message.NOT_AUTHENTICATED);
@@ -86,11 +75,10 @@ const PropertyList: NextPage = ({ initialInput, ...props }: any) => {
 			});
 
 			await getPropertiesRefetch({ input: initialInput });
-
-			// await sweetTopSmallSuccessAlert('success', 800);
-		} catch (err: any) {
-			console.log('Error, likePropertyHandler', err.message);
-			sweetMixinErrorAlert(err.message).then();
+		} catch (err: unknown) {
+			const message = err instanceof Error ? err.message : String(err);
+			console.log('Error, likePropertyHandler', message);
+			sweetMixinErrorAlert(message).then();
 		}
 	};
 
@@ -165,7 +153,6 @@ const PropertyList: NextPage = ({ initialInput, ...props }: any) => {
 					</Box>
 					<Stack className={'property-page'}>
 						<Stack className={'filter-config'}>
-							{/* @ts-ignore */}
 							<Filter searchFilter={searchFilter} setSearchFilter={setSearchFilter} initialInput={initialInput} />
 						</Stack>
 						<Stack className="main-config" mb={'76px'}>
@@ -185,7 +172,7 @@ const PropertyList: NextPage = ({ initialInput, ...props }: any) => {
 								{properties.length !== 0 && (
 									<Stack className="pagination-box">
 										<Pagination
-											page={currentPage}
+											page={searchFilter.page ?? 1}
 											count={Math.ceil(total / searchFilter.limit)}
 											onChange={handlePaginationChange}
 											shape="circular"
@@ -215,7 +202,7 @@ PropertyList.defaultProps = {
 		page: 1,
 		limit: 9,
 		sort: 'createdAt',
-		direction: 'DESC',
+		direction: Direction.DESC,
 		search: {
 			squaresRange: {
 				start: 0,

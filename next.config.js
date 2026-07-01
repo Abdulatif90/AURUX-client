@@ -1,15 +1,18 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-	reactStrictMode: true,
+	reactStrictMode: false,
+	images: {
+		remotePatterns: [
+			{ protocol: 'http', hostname: 'localhost', port: '3005' },
+			{ protocol: 'https', hostname: 'localhost', port: '3005' },
+		],
+	},
 	env: {
 		REACT_APP_API_URL: process.env.REACT_APP_API_URL,
 		REACT_APP_API_GRAPHQL_URL: process.env.REACT_APP_API_GRAPHQL_URL,
 		REACT_APP_API_WS: process.env.REACT_APP_API_WS,
 		REACT_APP_API_WS_URL: process.env.REACT_APP_API_WS_URL,
 		
-	},
-	experimental: {
-		esmExternals: false,
 	},
 	// Improve webpack configuration
 	webpack: (config, { isServer }) => {

@@ -9,13 +9,12 @@ import PortraitIcon from '@mui/icons-material/Portrait';
 import IconButton from '@mui/material/IconButton';
 import { REACT_APP_API_URL } from '../../config';
 import { logOut } from '../../auth';
-import { sweetConfirmAlert, sweetMixinErrorAlert } from '../../sweetAlert';
+import { sweetConfirmAlert } from '../../sweetAlert';
 
 const MyMenu = () => {
 	const device = useDeviceDetect();
 	const router = useRouter();
-	const pathname = router.query.category ?? 'myProfile';
-	const category: any = router.query?.category ?? 'myProfile';
+	const category = (router.query?.category as string | undefined) ?? 'myProfile';
 	const user = useReactiveVar(userVar);
 
 	/** HANDLERS **/
@@ -24,8 +23,8 @@ const MyMenu = () => {
 			if (await sweetConfirmAlert('Do you want to logout?')) {
 				await logOut();
 			}
-		} catch (err: any) {
-			console.log('ERROR, logoutHandler:', err.message);
+		} catch (err: unknown) {
+			console.log('ERROR, logoutHandler:', err instanceof Error ? err.message : err);
 		}
 	};
 
@@ -64,7 +63,7 @@ const MyMenu = () => {
 						<List className={'sub-section'}>
 							{user.memberType === 'AGENT' && (
 								<>
-									<ListItem className={pathname === 'addProperty' ? 'focus' : ''}>
+									<ListItem className={category ==='addProperty' ? 'focus' : ''}>
 										<Link
 											href={{
 												pathname: '/mypage',
@@ -87,7 +86,7 @@ const MyMenu = () => {
 											</div>
 										</Link>
 									</ListItem>
-									<ListItem className={pathname === 'myProperties' ? 'focus' : ''}>
+									<ListItem className={category ==='myProperties' ? 'focus' : ''}>
 										<Link
 											href={{
 												pathname: '/mypage',
@@ -112,7 +111,7 @@ const MyMenu = () => {
 									</ListItem>
 								</>
 							)}
-							<ListItem className={pathname === 'myFavorites' ? 'focus' : ''}>
+							<ListItem className={category ==='myFavorites' ? 'focus' : ''}>
 								<Link
 									href={{
 										pathname: '/mypage',
@@ -133,7 +132,7 @@ const MyMenu = () => {
 									</div>
 								</Link>
 							</ListItem>
-							<ListItem className={pathname === 'recentlyVisited' ? 'focus' : ''}>
+							<ListItem className={category ==='recentlyVisited' ? 'focus' : ''}>
 								<Link
 									href={{
 										pathname: '/mypage',
@@ -154,7 +153,7 @@ const MyMenu = () => {
 									</div>
 								</Link>
 							</ListItem>
-							<ListItem className={pathname === 'followers' ? 'focus' : ''}>
+							<ListItem className={category ==='followers' ? 'focus' : ''}>
 								<Link
 									href={{
 										pathname: '/mypage',
@@ -201,7 +200,7 @@ const MyMenu = () => {
 									</div>
 								</Link>
 							</ListItem>
-							<ListItem className={pathname === 'followings' ? 'focus' : ''}>
+							<ListItem className={category ==='followings' ? 'focus' : ''}>
 								<Link
 									href={{
 										pathname: '/mypage',
@@ -257,7 +256,7 @@ const MyMenu = () => {
 								Community
 							</Typography>
 							<List className={'sub-section'}>
-								<ListItem className={pathname === 'myArticles' ? 'focus' : ''}>
+								<ListItem className={category ==='myArticles' ? 'focus' : ''}>
 									<Link
 										href={{
 											pathname: '/mypage',
@@ -278,7 +277,7 @@ const MyMenu = () => {
 										</div>
 									</Link>
 								</ListItem>
-								<ListItem className={pathname === 'writeArticle' ? 'focus' : ''}>
+								<ListItem className={category ==='writeArticle' ? 'focus' : ''}>
 									<Link
 										href={{
 											pathname: '/mypage',
@@ -306,7 +305,7 @@ const MyMenu = () => {
 							MANAGE ACCOUNT
 						</Typography>
 						<List className={'sub-section'}>
-							<ListItem className={pathname === 'myProfile' ? 'focus' : ''}>
+							<ListItem className={category ==='myProfile' ? 'focus' : ''}>
 								<Link
 									href={{
 										pathname: '/mypage',

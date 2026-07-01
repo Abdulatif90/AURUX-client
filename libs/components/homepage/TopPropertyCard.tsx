@@ -9,12 +9,11 @@ import { REACT_APP_API_URL } from '../../config';
 import { useRouter } from 'next/router';
 import { useReactiveVar } from '@apollo/client';
 import { userVar } from '../../../apollo/store';
-import { T } from '../../types/common';
-import { sweetMixinErrorAlert } from '../../sweetAlert';
+import { CustomJwtPayload } from '../../types/customJwtPayload';
 
 interface TopPropertyCardProps {
 	property: Property;
-	likePropertyHandler: any;
+	likePropertyHandler: (user: CustomJwtPayload, id: string) => Promise<void>;
 }
 
 const TopPropertyCard = (props: TopPropertyCardProps) => {
@@ -26,7 +25,6 @@ const TopPropertyCard = (props: TopPropertyCardProps) => {
 	/** HANDLERS **/
 
 const pushDetailHandler = async (propertyId: string) => {
-		console.log('property id:', propertyId);
 		await router.push({ pathname: '/property/detail', query: { id: propertyId } });
 	};
 
@@ -148,4 +146,4 @@ const pushDetailHandler = async (propertyId: string) => {
 	}
 };
 
-export default TopPropertyCard;
+export default React.memo(TopPropertyCard);

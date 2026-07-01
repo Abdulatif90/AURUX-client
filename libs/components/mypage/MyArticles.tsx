@@ -5,65 +5,86 @@ import { Pagination, Stack, Typography } from '@mui/material';
 import CommunityCard from '../common/CommunityCard';
 import { useMutation, useQuery, useReactiveVar } from '@apollo/client';
 import { userVar } from '../../../apollo/store';
-import { T } from '../../types/common';
-import { BoardArticle } from '../../types/board-article/board-article';
-import { LIKE_TARGET_PROPERTY } from '../../../apollo/user/mutation';
+import { BoardArticle, BoardArticles } from '../../types/board-article/board-article';
+import { BoardArticlesInquiry } from '../../types/board-article/board-article.input';
+import { Direction } from '../../enums/common.enum';
+import { LIKE_TARGET_BOARD_ARTICLE } from '../../../apollo/user/mutation';
+import { CustomJwtPayload } from '../../types/customJwtPayload';
 import { GET_BOARD_ARTICLES } from '../../../apollo/user/query';
 import { Message } from '../../enums/common.enum';
 import { sweetMixinErrorAlert, sweetTopSmallSuccessAlert } from '../../sweetAlert';
 
-const MyArticles: NextPage = ({ initialInput, ...props }: T) => {
+interface MyArticlesProps {
+	initialInput?: BoardArticlesInquiry;
+}
+
+const defaultMyArticlesInput: BoardArticlesInquiry = {
+	page: 1,
+	limit: 6,
+	sort: 'createdAt',
+	direction: Direction.DESC,
+	search: {},
+};
+
+const MyArticles: NextPage<MyArticlesProps> = ({ initialInput = defaultMyArticlesInput }: MyArticlesProps) => {
 	const device = useDeviceDetect();
 	const user = useReactiveVar(userVar);
 	const [searchCommunity, setSearchCommunity] = useState({
 		...initialInput,
 		search: { memberId: user._id },
 	});
-	const [boardArticles, setBoardArticles] = useState<BoardArticle[]>([]);
-	const [totalCount, setTotalCount] = useState<number>(0);
-
 	/** APOLLO REQUESTS **/
 
-	const [likeTargetProperty] = useMutation(LIKE_TARGET_PROPERTY);
+	const [likeTargetBoardArticle] = useMutation(LIKE_TARGET_BOARD_ARTICLE);
 	const {
 		loading: boardArticlesLoading,
 		data: boardArticlesData,
 		error: getboardArticlesError,
 		refetch: boardArticlesRefetch,
-	} = useQuery(GET_BOARD_ARTICLES, {
-		fetchPolicy: 'network-only',
+	} = useQuery<{ getBoardArticles: BoardArticles }>(GET_BOARD_ARTICLES, {
+		fetchPolicy: 'cache-and-network',
 		variables: { input: searchCommunity },
-		notifyOnNetworkStatusChange: true,
-		onCompleted: (data: T) => {
-			setBoardArticles(data?.getBoardArticles?.list);
-			setTotalCount(data?.getBoardArticles?.metaCounter[0]?.total);
-		},
 	});
 
+	const boardArticles = boardArticlesData?.getBoardArticles?.list ?? [];
+	const totalCount = boardArticlesData?.getBoardArticles?.metaCounter?.[0]?.total ?? 0;
+
+
+	const LIKE_SUCCESS_ALERT_DURATION_MS = 800;
 
 	/** HANDLERS **/
-	const paginationHandler = (e: T, value: number) => {
+	const paginationHandler = (_event: React.ChangeEvent<unknown>, value: number): void => {
 		setSearchCommunity({ ...searchCommunity, page: value });
 	};
 
-	const likePropertyHandler = async (user: T, id: string) => {
+	const likeArticleHandler = async (e: React.MouseEvent, user: CustomJwtPayload, id: string): Promise<void> => {
+		e.stopPropagation();
 		try {
 			if (!id) return;
 			if (!user._id) throw new Error(Message.NOT_AUTHENTICATED);
 
-			await likeTargetProperty({
+			await likeTargetBoardArticle({
 				variables: { input: id },
 			});
 
 			await boardArticlesRefetch({ input: searchCommunity });
 
-			await sweetTopSmallSuccessAlert('Success', 800);
-		} catch (err: any) {
-			console.log('Error, likePropertyHandler', err.message);
-			sweetMixinErrorAlert(err.message).then();
+			await sweetTopSmallSuccessAlert('Success', LIKE_SUCCESS_ALERT_DURATION_MS);
+		} catch (err: unknown) {
+			const message = err instanceof Error ? err.message : Message.SOMETHING_WENT_WRONG;
+			console.log('Error, likeArticleHandler', message);
+			sweetMixinErrorAlert(message).then();
 		}
 	};
 
+
+	if (boardArticlesLoading) {
+		return <div id="my-articles-page"><p>Loading...</p></div>;
+	}
+
+	if (getboardArticlesError) {
+		return <div id="my-articles-page"><p>Failed to load articles.</p></div>;
+	}
 
 	if (device === 'mobile') {
 		return <>ARTICLE PAGE MOBILE</>;
@@ -81,7 +102,7 @@ const MyArticles: NextPage = ({ initialInput, ...props }: T) => {
 						boardArticles?.map((boardArticle: BoardArticle) => {
 							return (
 								<CommunityCard
-									likeArticleHandler={likePropertyHandler}
+									likeArticleHandler={likeArticleHandler}
 									boardArticle={boardArticle}
 									key={boardArticle?._id}
 									size={'small'}
@@ -116,14 +137,5 @@ const MyArticles: NextPage = ({ initialInput, ...props }: T) => {
 		);
 };
 
-MyArticles.defaultProps = {
-	initialInput: {
-		page: 1,
-		limit: 6,
-		sort: 'createdAt',
-		direction: 'DESC',
-		search: {},
-	},
-};
 
 export default MyArticles;

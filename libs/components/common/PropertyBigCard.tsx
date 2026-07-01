@@ -8,12 +8,13 @@ import { REACT_APP_API_URL, topPropertyRank } from '../../config';
 import { formatterStr } from '../../utils';
 import { useReactiveVar } from '@apollo/client';
 import { userVar } from '../../../apollo/store';
+import { CustomJwtPayload } from '../../types/customJwtPayload';
 import { useRouter } from 'next/router';
 import RemoveRedEyeIcon from '@mui/icons-material/RemoveRedEye';
 
 interface PropertyBigCardProps {
 	property: Property;
-	likePropertyHandler?: any;
+	likePropertyHandler?: (user: CustomJwtPayload, id: string) => Promise<void>;
 }
 
 const PropertyBigCard = (props: PropertyBigCardProps) => {
@@ -76,7 +77,7 @@ const PropertyBigCard = (props: PropertyBigCardProps) => {
 							<Typography className="view-cnt">{property?.propertyViews}</Typography>
 							<IconButton
 								color={'default'}
-								onClick={(e: any) => {
+								onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
 									e.stopPropagation();
 									if (likePropertyHandler) {
 										likePropertyHandler(user, property?._id);

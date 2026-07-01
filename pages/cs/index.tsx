@@ -40,7 +40,7 @@ const CS: NextPage = () => {
 						</Box>
 						<Box component={'div'} className={'btns'}>
 							<div
-								className={tab == 'notice' ? 'active' : ''}
+								className={tab === 'notice' ? 'active' : ''}
 								onClick={() => {
 									changeTabHandler('notice');
 								}}
@@ -48,7 +48,7 @@ const CS: NextPage = () => {
 								Notice
 							</div>
 							<div
-								className={tab == 'faq' ? 'active' : ''}
+								className={tab === 'faq' ? 'active' : ''}
 								onClick={() => {
 									changeTabHandler('faq');
 								}}

@@ -43,7 +43,7 @@ const checkChatBackendAvailability = (): Promise<boolean> => {
 			if (response.ok) {
 				const data = await response.json();
 				const mutations = data.data?.__type?.fields || [];
-				cachedChatBackendAvailable = mutations.some((field: any) => field.name === 'sendChatMessage');
+				cachedChatBackendAvailable = mutations.some((field: { name: string }) => field.name === 'sendChatMessage');
 			} else {
 				cachedChatBackendAvailable = false;
 			}
@@ -247,20 +247,20 @@ const Chat = () => {
 	};
 
 	const getInputMessageHandler = useCallback(
-		(e: any) => {
+		(e: React.ChangeEvent<HTMLInputElement>) => {
 			const text = e.target.value;
 			setMessage(text);
 		},
 		[],
 	);
 
-	const getKeyHandler = (e: any) => {
+	const getKeyHandler = (e: React.KeyboardEvent<HTMLInputElement>) => {
 		try {
 			if (e.key === 'Enter') {
 				e.preventDefault();
 				onClickHandler();
 			}
-		} catch (err: any) {
+		} catch (err: unknown) {
 			console.log(err);
 		}
 	};

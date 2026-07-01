@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useRouter } from 'next/router';
 import { Stack, Typography, Box, List, ListItem, Button } from '@mui/material';
 import useDeviceDetect from '../../hooks/useDeviceDetect';
@@ -7,36 +7,32 @@ import { Member } from '../../types/member/member';
 import { REACT_APP_API_URL } from '../../config';
 import { useQuery } from '@apollo/client';
 import { GET_MEMBER } from '../../../apollo/user/query';
-import { T } from '../../types/common';
+
+type MemberRefetch = () => Promise<unknown>;
 
 interface MemberMenuProps {
-	subscribeHandler: any;
-	unsubscribeHandler: any;
+	subscribeHandler: (id: string | undefined, refetch: MemberRefetch, memberId: string | string[] | undefined) => Promise<void>;
+	unsubscribeHandler: (id: string | undefined, refetch: MemberRefetch, memberId: string | string[] | undefined) => Promise<void>;
 }
 
 const MemberMenu = (props: MemberMenuProps) => {
 	const { subscribeHandler, unsubscribeHandler } = props;
 	const device = useDeviceDetect();
 	const router = useRouter();
-	const category: any = router.query?.category;
-	const [member, setMember] = useState<Member | null>(null);
+	const category = (router.query?.category as string | undefined) ?? 'properties';
 	const { memberId } = router.query;
 
 	/** APOLLO REQUESTS **/
 	const {
-		loading: getMemberLoading,
 		data: getMemberData,
-		error: getMemberError,
 		refetch: getMemberRefetch,
-	} = useQuery(GET_MEMBER, {
-		fetchPolicy: 'network-only',
+	} = useQuery<{ getMember: Member }>(GET_MEMBER, {
+		fetchPolicy: 'cache-and-network',
 		variables: { input: memberId },
 		skip: !memberId,
-		notifyOnNetworkStatusChange: true,
-		onCompleted: (data: T) => {
-			setMember(data?.getMember);
-		},
 	});
+
+	const member = getMemberData?.getMember ?? null;
 
 	if (device === 'mobile') {
 		return <div>MEMBER MENU MOBILE</div>;

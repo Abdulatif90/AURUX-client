@@ -17,7 +17,6 @@ const Review = (props: ReviewProps) => {
 	const device = useDeviceDetect();
 	const router = useRouter();
 	const user = useReactiveVar(userVar);
-	const [value, setValue] = React.useState<number | null>(2);
 	const imagePath: string = comment?.memberData?.memberImage
 		? `${REACT_APP_API_URL}/${comment?.memberData?.memberImage}`
 		: '/img/profile/defaultUser.svg';
@@ -36,7 +35,7 @@ const Review = (props: ReviewProps) => {
 					<Stack className={'img-name-box'}>
 						<img src={imagePath} alt="" className={'img-box'} />
 						<Stack>
-							<Typography className={'name'} onClick={() => goMemberPage(comment?.memberData?._id as string)}>
+							<Typography className={'name'} onClick={() => { if (comment?.memberData?._id) goMemberPage(comment.memberData._id); }}>
 								{comment.memberData?.memberNick}
 							</Typography>
 							<Typography className={'date'}>

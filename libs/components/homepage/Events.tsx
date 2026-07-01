@@ -80,10 +80,9 @@ const Events = () => {
 						</Box>
 					</Stack>
 					<Stack className={'card-wrapper'}>
-						{eventsData.map((event: EventData) => {
-							console.log('EVENT id', event?.eventTitle);
-							return <EventCard event={event} key={event?.imageSrc} />;
-						})}
+						{eventsData.map((event: EventData) => (
+							<EventCard event={event} key={event?.imageSrc} />
+						))}
 					</Stack>
 				</Stack>
 			</Stack>
@@ -91,4 +90,4 @@ const Events = () => {
 	}
 };
 
-export default Events;
+export default React.memo(Events);

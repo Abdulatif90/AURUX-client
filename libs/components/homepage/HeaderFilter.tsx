@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Stack, Box, Modal, Divider, Button } from '@mui/material';
+import { Stack, Modal, Divider, Button, SelectChangeEvent } from '@mui/material';
 import useDeviceDetect from '../../hooks/useDeviceDetect';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import CloseIcon from '@mui/icons-material/Close';
@@ -13,7 +13,7 @@ import { useRouter } from 'next/router';
 import { useTranslation } from 'next-i18next';
 
 const style = {
-	position: 'absolute' as 'absolute',
+	position: 'absolute' as const,
 	top: '50%',
 	left: '50%',
 	transform: 'translate(-50%, -50%)',
@@ -43,9 +43,9 @@ const HeaderFilter = (props: HeaderFilterProps) => {
 	const device = useDeviceDetect();
 	const { t, i18n } = useTranslation('common');
 	const [searchFilter, setSearchFilter] = useState<PropertiesInquiry>(initialInput);
-	const locationRef: any = useRef();
-	const typeRef: any = useRef();
-	const roomsRef: any = useRef();
+	const locationRef = useRef<HTMLDivElement>(null);
+	const typeRef = useRef<HTMLDivElement>(null);
+	const roomsRef = useRef<HTMLDivElement>(null);
 	const router = useRouter();
 	const [openAdvancedFilter, setOpenAdvancedFilter] = useState(false);
 	const [openLocation, setOpenLocation] = useState(false);
@@ -59,15 +59,15 @@ const HeaderFilter = (props: HeaderFilterProps) => {
 	/** LIFECYCLES **/
 	useEffect(() => {
 		const clickHandler = (event: MouseEvent) => {
-			if (!locationRef?.current?.contains(event.target)) {
+			if (!locationRef?.current?.contains(event.target as Node | null)) {
 				setOpenLocation(false);
 			}
 
-			if (!typeRef?.current?.contains(event.target)) {
+			if (!typeRef?.current?.contains(event.target as Node | null)) {
 				setOpenType(false);
 			}
 
-			if (!roomsRef?.current?.contains(event.target)) {
+			if (!roomsRef?.current?.contains(event.target as Node | null)) {
 				setOpenRooms(false);
 			}
 		};
@@ -112,7 +112,7 @@ const HeaderFilter = (props: HeaderFilterProps) => {
 	};
 
 	const propertyLocationSelectHandler = useCallback(
-		async (value: any) => {
+		async (value: PropertyLocation): Promise<void> => {
 			try {
 				setSearchFilter({
 					...searchFilter,
@@ -122,7 +122,7 @@ const HeaderFilter = (props: HeaderFilterProps) => {
 					},
 				});
 				typeStateChangeHandler();
-			} catch (err: any) {
+			} catch (err: unknown) {
 				console.log('ERROR, propertyLocationSelectHandler:', err);
 			}
 		},
@@ -130,7 +130,7 @@ const HeaderFilter = (props: HeaderFilterProps) => {
 	);
 
 	const propertyTypeSelectHandler = useCallback(
-		async (value: any) => {
+		async (value: PropertyType): Promise<void> => {
 			try {
 				setSearchFilter({
 					...searchFilter,
@@ -140,7 +140,7 @@ const HeaderFilter = (props: HeaderFilterProps) => {
 					},
 				});
 				roomStateChangeHandler();
-			} catch (err: any) {
+			} catch (err: unknown) {
 				console.log('ERROR, propertyTypeSelectHandler:', err);
 			}
 		},
@@ -148,7 +148,7 @@ const HeaderFilter = (props: HeaderFilterProps) => {
 	);
 
 	const propertyRoomSelectHandler = useCallback(
-		async (value: any) => {
+		async (value: number): Promise<void> => {
 			try {
 				setSearchFilter({
 					...searchFilter,
@@ -158,7 +158,7 @@ const HeaderFilter = (props: HeaderFilterProps) => {
 					},
 				});
 				disableAllStateHandler();
-			} catch (err: any) {
+			} catch (err: unknown) {
 				console.log('ERROR, propertyRoomSelectHandler:', err);
 			}
 		},
@@ -166,9 +166,9 @@ const HeaderFilter = (props: HeaderFilterProps) => {
 	);
 
 	const propertyBedSelectHandler = useCallback(
-		async (number: Number) => {
+		async (number: number): Promise<void> => {
 			try {
-				if (number != 0) {
+				if (number !== 0) {
 					if (searchFilter?.search?.bedsList?.includes(number)) {
 						setSearchFilter({
 							...searchFilter,
@@ -184,12 +184,10 @@ const HeaderFilter = (props: HeaderFilterProps) => {
 						});
 					}
 				} else {
-					delete searchFilter?.search.bedsList;
-					setSearchFilter({ ...searchFilter });
+					const { bedsList: _, ...restSearch } = searchFilter.search;
+					setSearchFilter({ ...searchFilter, search: restSearch });
 				}
-
-				console.log('propertyBedSelectHandler:', number);
-			} catch (err: any) {
+			} catch (err: unknown) {
 				console.log('ERROR, propertyBedSelectHandler:', err);
 			}
 		},
@@ -197,7 +195,7 @@ const HeaderFilter = (props: HeaderFilterProps) => {
 	);
 
 	const propertyOptionSelectHandler = useCallback(
-		async (e: any) => {
+		async (e: SelectChangeEvent<string>): Promise<void> => {
 			try {
 				const value = e.target.value;
 				setOptionCheck(value);
@@ -211,15 +209,10 @@ const HeaderFilter = (props: HeaderFilterProps) => {
 						},
 					});
 				} else {
-					delete searchFilter.search.options;
-					setSearchFilter({
-						...searchFilter,
-						search: {
-							...searchFilter.search,
-						},
-					});
+					const { options: _, ...restSearch } = searchFilter.search;
+					setSearchFilter({ ...searchFilter, search: restSearch });
 				}
-			} catch (err: any) {
+			} catch (err: unknown) {
 				console.log('ERROR, propertyOptionSelectHandler:', err);
 			}
 		},
@@ -227,7 +220,7 @@ const HeaderFilter = (props: HeaderFilterProps) => {
 	);
 
 	const propertySquareHandler = useCallback(
-		async (e: any, type: string) => {
+		async (e: SelectChangeEvent<string>, type: 'start' | 'end'): Promise<void> => {
 			const value = e.target.value;
 
 			if (type == 'start') {
@@ -235,8 +228,10 @@ const HeaderFilter = (props: HeaderFilterProps) => {
 					...searchFilter,
 					search: {
 						...searchFilter.search,
-						// @ts-ignore
-						squaresRange: { ...searchFilter.search.squaresRange, start: parseInt(value) },
+						squaresRange: {
+							start: parseInt(value),
+							end: searchFilter.search.squaresRange?.end ?? 0,
+						},
 					},
 				});
 			} else {
@@ -244,8 +239,10 @@ const HeaderFilter = (props: HeaderFilterProps) => {
 					...searchFilter,
 					search: {
 						...searchFilter.search,
-						// @ts-ignore
-						squaresRange: { ...searchFilter.search.squaresRange, end: parseInt(value) },
+						squaresRange: {
+							start: searchFilter.search.squaresRange?.start ?? 0,
+							end: parseInt(value),
+						},
 					},
 				});
 			}
@@ -253,7 +250,7 @@ const HeaderFilter = (props: HeaderFilterProps) => {
 		[searchFilter],
 	);
 
-	const yearStartChangeHandler = async (event: any) => {
+	const yearStartChangeHandler = async (event: SelectChangeEvent<string>): Promise<void> => {
 		setYearCheck({ ...yearCheck, start: Number(event.target.value) });
 
 		setSearchFilter({
@@ -265,7 +262,7 @@ const HeaderFilter = (props: HeaderFilterProps) => {
 		});
 	};
 
-	const yearEndChangeHandler = async (event: any) => {
+	const yearEndChangeHandler = async (event: SelectChangeEvent<string>): Promise<void> => {
 		setYearCheck({ ...yearCheck, end: Number(event.target.value) });
 
 		setSearchFilter({
@@ -285,31 +282,19 @@ const HeaderFilter = (props: HeaderFilterProps) => {
 
 	const pushSearchHandler = async () => {
 		try {
-			if (searchFilter?.search?.locationList?.length == 0) {
-				delete searchFilter.search.locationList;
-			}
+			const cleanSearch = { ...searchFilter.search };
+			if (!cleanSearch.locationList?.length) delete cleanSearch.locationList;
+			if (!cleanSearch.typeList?.length) delete cleanSearch.typeList;
+			if (!cleanSearch.roomsList?.length) delete cleanSearch.roomsList;
+			if (!cleanSearch.options?.length) delete cleanSearch.options;
+			if (!cleanSearch.bedsList?.length) delete cleanSearch.bedsList;
 
-			if (searchFilter?.search?.typeList?.length == 0) {
-				delete searchFilter.search.typeList;
-			}
-
-			if (searchFilter?.search?.roomsList?.length == 0) {
-				delete searchFilter.search.roomsList;
-			}
-
-			if (searchFilter?.search?.options?.length == 0) {
-				delete searchFilter.search.options;
-			}
-
-			if (searchFilter?.search?.bedsList?.length == 0) {
-				delete searchFilter.search.bedsList;
-			}
-
+			const cleanFilter = { ...searchFilter, search: cleanSearch };
 			await router.push(
-				`/property?input=${JSON.stringify(searchFilter)}`,
-				`/property?input=${JSON.stringify(searchFilter)}`,
+				`/property?input=${JSON.stringify(cleanFilter)}`,
+				`/property?input=${JSON.stringify(cleanFilter)}`,
 			);
-		} catch (err: any) {
+		} catch (err: unknown) {
 			console.log('ERROR, pushSearchHandler:', err);
 		}
 	};
@@ -321,34 +306,34 @@ const HeaderFilter = (props: HeaderFilterProps) => {
 			<>
 				<Stack className={'search-box'}>
 					<Stack className={'select-box'}>
-						<Box component={'div'} className={`box ${openLocation ? 'on' : ''}`} onClick={locationStateChangeHandler}>
+						<div className={`box ${openLocation ? 'on' : ''}`} onClick={locationStateChangeHandler}>
 							<span>{searchFilter?.search?.locationList ? searchFilter?.search?.locationList[0] : t('Location')} </span>
 							<ExpandMoreIcon />
-						</Box>
-						<Box className={`box ${openType ? 'on' : ''}`} onClick={typeStateChangeHandler}>
+						</div>
+						<div className={`box ${openType ? 'on' : ''}`} onClick={typeStateChangeHandler}>
 							<span> {searchFilter?.search?.typeList ? searchFilter?.search?.typeList[0] : t('Property type')} </span>
 							<ExpandMoreIcon />
-						</Box>
-						<Box className={`box ${openRooms ? 'on' : ''}`} onClick={roomStateChangeHandler}>
+						</div>
+						<div className={`box ${openRooms ? 'on' : ''}`} onClick={roomStateChangeHandler}>
 							<span>
 								{searchFilter?.search?.roomsList ? `${searchFilter?.search?.roomsList[0]} rooms}` : t('Rooms')}
 							</span>
 							<ExpandMoreIcon />
-						</Box>
+						</div>
 					</Stack>
 					<Stack className={'search-box-other'}>
-						<Box className={'advanced-filter'} onClick={() => advancedFilterHandler(true)}>
+						<div className={'advanced-filter'} onClick={() => advancedFilterHandler(true)}>
 							<img src="/img/icons/tune.svg" alt="" />
 							<span>{t('Advanced')}</span>
-						</Box>
-						<Box className={'search-btn'} onClick={pushSearchHandler}>
+						</div>
+						<div className={'search-btn'} onClick={pushSearchHandler}>
 							<img src="/img/icons/search_white.svg" alt="" />
-						</Box>
+						</div>
 					</Stack>
 
 					{/*MENU */}
 					<div className={`filter-location ${openLocation ? 'on' : ''}`} ref={locationRef}>
-						{propertyLocation.map((location: string) => {
+						{propertyLocation.map((location: PropertyLocation) => {
 							return (
 								<div onClick={() => propertyLocationSelectHandler(location)} key={location}>
 									<img src={`img/banner/cities/${location}.webp`} alt="" />
@@ -359,7 +344,7 @@ const HeaderFilter = (props: HeaderFilterProps) => {
 					</div>
 
 					<div className={`filter-type ${openType ? 'on' : ''}`} ref={typeRef}>
-						{propertyType.map((type: string) => {
+						{propertyType.map((type: PropertyType) => {
 							return (
 								<div
 									style={{ backgroundImage: `url(/img/banner/types/${type.toLowerCase()}.webp)` }}
@@ -390,9 +375,8 @@ const HeaderFilter = (props: HeaderFilterProps) => {
 					aria-labelledby="modal-modal-title"
 					aria-describedby="modal-modal-description"
 				>
-					{/* @ts-ignore */}
-					<Box sx={style}>
-						<Box className={'advanced-filter-modal'}>
+					<div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 'auto', background: '#fff', borderRadius: '12px', outline: 'none', boxShadow: '0 24px 50px rgba(0,0,0,0.25)' }}>
+						<div className={'advanced-filter-modal'}>
 							<div className={'close'} onClick={() => advancedFilterHandler(false)}>
 								<CloseIcon />
 							</div>
@@ -404,7 +388,7 @@ const HeaderFilter = (props: HeaderFilterProps) => {
 										value={searchFilter?.search?.text ?? ''}
 										type="text"
 										placeholder={'What are you looking for?'}
-										onChange={(e: any) => {
+										onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
 											setSearchFilter({
 												...searchFilter,
 												search: { ...searchFilter.search, text: e.target.value },
@@ -499,8 +483,8 @@ const HeaderFilter = (props: HeaderFilterProps) => {
 										<div className={'inside space-between align-center'}>
 											<FormControl sx={{ width: '122px' }}>
 												<Select
-													value={searchFilter?.search?.squaresRange?.start}
-													onChange={(e: any) => propertySquareHandler(e, 'start')}
+													value={String(searchFilter?.search?.squaresRange?.start ?? '')}
+													onChange={(e: SelectChangeEvent<string>) => propertySquareHandler(e, 'start')}
 													displayEmpty
 													inputProps={{ 'aria-label': 'Without label' }}
 													MenuProps={MenuProps}
@@ -519,8 +503,8 @@ const HeaderFilter = (props: HeaderFilterProps) => {
 											<div className={'minus-line'}></div>
 											<FormControl sx={{ width: '122px' }}>
 												<Select
-													value={searchFilter?.search?.squaresRange?.end}
-													onChange={(e: any) => propertySquareHandler(e, 'end')}
+													value={String(searchFilter?.search?.squaresRange?.end ?? '')}
+													onChange={(e: SelectChangeEvent<string>) => propertySquareHandler(e, 'end')}
 													displayEmpty
 													inputProps={{ 'aria-label': 'Without label' }}
 													MenuProps={MenuProps}
@@ -554,8 +538,8 @@ const HeaderFilter = (props: HeaderFilterProps) => {
 									Search
 								</Button>
 							</div>
-						</Box>
-					</Box>
+						</div>
+					</div>
 				</Modal>
 			</>
 		);

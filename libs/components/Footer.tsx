@@ -29,7 +29,7 @@ const Footer = () => {
 		});
 	};
 
-	if (device == 'mobile') {
+	if (device === 'mobile') {
 		return (
 			<Stack className={'footer-container'}>
 				<Stack className={'main'}>

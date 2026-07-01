@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useRouter, withRouter } from 'next/router';
+import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { List, ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
 import Collapse from '@mui/material/Collapse';
@@ -10,20 +10,24 @@ import { ChatsCircle, Headset, User, UserCircleGear } from 'phosphor-react';
 import cookies from 'js-cookie';
 import useDeviceDetect from '../../hooks/useDeviceDetect';
 
-const AdminMenuList = (props: any) => {
+interface SubMenuItem {
+	title: string;
+	url: string;
+}
+type SubMenuSet = Record<string, SubMenuItem[]>;
+
+const AdminMenuList = () => {
 	const router = useRouter();
 	const device = useDeviceDetect();
 	const [mobileLayout, setMobileLayout] = useState(false);
 	const [openSubMenu, setOpenSubMenu] = useState('Users');
 	const [openMenu, setOpenMenu] = useState(typeof window === 'object' ? cookies.get('admin_menu') === 'true' : false);
-	const [clickMenu, setClickMenu] = useState<any>([]);
+	const [clickMenu, setClickMenu] = useState<string[]>([]);
 	const [clickSubMenu, setClickSubMenu] = useState('');
 
-	const {
-		router: { pathname },
-	} = props;
+	const { pathname } = router;
 
-	const pathnames = pathname.split('/').filter((x: any) => x);
+	const pathnames = pathname.split('/').filter((x: string) => x);
 
 	/** LIFECYCLES **/
 	useEffect(() => {
@@ -100,7 +104,7 @@ const AdminMenuList = (props: any) => {
 		},
 	];
 
-	const sub_menu_set: any = {
+	const sub_menu_set: SubMenuSet = {
 		Users: [{ title: 'List', url: '/_admin/users' }],
 		Properties: [{ title: 'List', url: '/_admin/properties' }],
 		Community: [{ title: 'List', url: '/_admin/community' }],
@@ -145,13 +149,13 @@ const AdminMenuList = (props: any) => {
 					>
 						<List className="menu-list" disablePadding>
 							{sub_menu_set[item.title] &&
-								sub_menu_set[item.title].map((sub: any, i: number) => (
+								sub_menu_set[item.title].map((sub: SubMenuItem, i: number) => (
 									<Link href={sub.url} shallow={true} replace={true} key={i}>
 										<ListItemButton
 											component="li"
 											className={clickMenu[0] === item.title && clickSubMenu === sub.title ? 'li on' : 'li'}
 										>
-											<Typography variant={sub.title} component={'span'}>
+											<Typography variant="body2" component={'span'}>
 												{sub.title}
 											</Typography>
 										</ListItemButton>
@@ -165,4 +169,4 @@ const AdminMenuList = (props: any) => {
 	);
 };
 
-export default withRouter(AdminMenuList);
+export default AdminMenuList;

@@ -3,16 +3,13 @@ import { NextPage } from 'next';
 import useDeviceDetect from '../../hooks/useDeviceDetect';
 import { Pagination, Stack, Typography } from '@mui/material';
 import PropertyCard from '../property/PropertyCard';
-import { Property } from '../../types/property/property';
-import { T } from '../../types/common';
+import { Properties, Property } from '../../types/property/property';
 import { GET_VISITED } from '../../../apollo/user/query';
 import { useQuery } from '@apollo/client';
 
 const RecentlyVisited: NextPage = () => {
 	const device = useDeviceDetect();
-	const [recentlyVisited, setRecentlyVisited] = useState<Property[]>([]);
-	const [total, setTotal] = useState<number>(0);
-	const [searchVisited, setSearchVisited] = useState<T>({ page: 1, limit: 6 });
+	const [searchVisited, setSearchVisited] = useState<{ page: number; limit: number }>({ page: 1, limit: 6 });
 
 	/** APOLLO REQUESTS **/
 
@@ -20,21 +17,21 @@ const RecentlyVisited: NextPage = () => {
 		loading: getVisitedLoading,
 		data: getVisitedData,
 		error: getVisitedError,
-		refetch: getVisitedRefetch,
-	} = useQuery(GET_VISITED, {
-		fetchPolicy: 'network-only',
+	} = useQuery<{ getVisited: Properties }>(GET_VISITED, {
+		fetchPolicy: 'cache-and-network',
 		variables: { input: searchVisited },
-		notifyOnNetworkStatusChange: true,
-		onCompleted: (data: T) => {
-			setRecentlyVisited(data.getVisited?.list);
-			setTotal(data.getVisited?.metaCounter?.[0]?.total || 0);
-		},
 	});
 
+	const recentlyVisited = getVisitedData?.getVisited?.list ?? [];
+	const total = getVisitedData?.getVisited?.metaCounter?.[0]?.total ?? 0;
+
 	/** HANDLERS **/
-	const paginationHandler = (e: T, value: number) => {
+	const paginationHandler = (_event: React.ChangeEvent<unknown>, value: number): void => {
 		setSearchVisited({ ...searchVisited, page: value });
 	};
+
+	if (getVisitedLoading) return <div id="my-favorites-page"><p>Loading...</p></div>;
+	if (getVisitedError) return <div id="my-favorites-page"><p>Failed to load recently visited.</p></div>;
 
 	if (device === 'mobile') {
 		return <div>AURUX MY FAVORITES MOBILE</div>;
@@ -50,7 +47,7 @@ const RecentlyVisited: NextPage = () => {
 				<Stack className="favorites-list-box">
 					{recentlyVisited?.length ? (
 						recentlyVisited?.map((property: Property) => {
-							return <PropertyCard property={property} recentlyVisited={true} />;
+							return <PropertyCard property={property} recentlyVisited={true} key={property?._id} />;
 						})
 					) : (
 						<div className={'no-data'}>

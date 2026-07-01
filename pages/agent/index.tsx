@@ -7,60 +7,59 @@ import { Menu, MenuItem } from '@mui/material';
 import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
 import AgentCard from '../../libs/components/common/AgentCard';
 import { useRouter } from 'next/router';
-import { Member } from '../../libs/types/member/member';
+import { Member, Members } from '../../libs/types/member/member';
+import { AgentsInquiry } from '../../libs/types/member/member.input';
+import { CustomJwtPayload } from '../../libs/types/customJwtPayload';
 import { useMutation, useQuery } from '@apollo/client';
-import { LIKE_TARGET_MEMBER, LIKE_TARGET_PROPERTY } from '../../apollo/user/mutation';
-import { GET_AGENTS, GET_PROPERTIES } from '../../apollo/user/query';
-import { T } from '../../libs/types/common';
-import { Message } from '../../libs/enums/common.enum';
+import { LIKE_TARGET_MEMBER } from '../../apollo/user/mutation';
+import { GET_AGENTS } from '../../apollo/user/query';
+import { Direction, Message } from '../../libs/enums/common.enum';
 import { Messages } from '../../libs/config';
 import { sweetMixinErrorAlert, sweetTopSmallSuccessAlert } from '../../libs/sweetAlert';
 
 export { getStaticProps } from '../../libs/getStaticProps';
 
-const AgentList: NextPage = ({ initialInput, ...props }: any): JSX.Element => {
+interface AgentListProps { initialInput: AgentsInquiry; }
+const AgentList: NextPage<AgentListProps> = ({ initialInput }): JSX.Element => {
 	const device = useDeviceDetect();
 	const router = useRouter();
 	const [anchorEl2, setAnchorEl2] = useState<null | HTMLElement>(null);
 	const [filterSortName, setFilterSortName] = useState('Recent');
 	const [sortingOpen, setSortingOpen] = useState(false);
 	const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-	const [searchFilter, setSearchFilter] = useState<any>(
-		router?.query?.input ? JSON.parse(router?.query?.input as string) : initialInput,
+	const [searchFilter, setSearchFilter] = useState<AgentsInquiry>(
+		router.query.input
+			? JSON.parse(Array.isArray(router.query.input) ? router.query.input[0] : router.query.input)
+			: initialInput,
 	);
-	const [agents, setAgents] = useState<Member[]>([]);
-	const [total, setTotal] = useState<number>(0);
-	const [currentPage, setCurrentPage] = useState<number>(1);
 	const [searchText, setSearchText] = useState<string>('');
 
 	/** APOLLO REQUESTS **/
 
-const [likeTargetMember] = useMutation(LIKE_TARGET_MEMBER);
-const {
+	const [likeTargetMember] = useMutation(LIKE_TARGET_MEMBER);
+	const {
 		loading: getAgentsLoading,
 		data: getAgentsData,
 		error: getAgentsError,
 		refetch: getAgentsRefetch,
-	} = useQuery(GET_AGENTS, {
-		fetchPolicy: 'network-only',
+	} = useQuery<{ getAgents: Members }>(GET_AGENTS, {
+		fetchPolicy: 'cache-and-network',
 		variables: { input: searchFilter },
-		notifyOnNetworkStatusChange: true,
-		onCompleted: (data: T) => {
-			setAgents(data?.getAgents?.list);
-			setTotal(data?.getAgents?.metaCounter[0]?.total);
-		},
 	});
+
+	const agents = getAgentsData?.getAgents?.list ?? [];
+	const total = getAgentsData?.getAgents?.metaCounter?.[0]?.total ?? 0;
 
 	/** LIFECYCLES **/
 	useEffect(() => {
-		if (router.query.input) {
-			const input_obj = JSON.parse(router?.query?.input as string);
-			setSearchFilter(input_obj);
-		} else
+		const input = router.query.input;
+		if (input) {
+			const inputStr = Array.isArray(input) ? input[0] : input;
+			setSearchFilter(JSON.parse(inputStr));
+		} else {
 			router.replace(`/agent?input=${JSON.stringify(searchFilter)}`, `/agent?input=${JSON.stringify(searchFilter)}`);
-
-		setCurrentPage(searchFilter.page === undefined ? 1 : searchFilter.page);
-	}, [router]);
+		}
+	}, [router.query.input]);
 
 	/** HANDLERS **/
 	const sortingClickHandler = (e: MouseEvent<HTMLElement>) => {
@@ -76,19 +75,19 @@ const {
 	const sortingHandler = (e: React.MouseEvent<HTMLLIElement>) => {
 		switch (e.currentTarget.id) {
 			case 'recent':
-				setSearchFilter({ ...searchFilter, sort: 'createdAt', direction: 'DESC' });
+				setSearchFilter({ ...searchFilter, sort: 'createdAt', direction: Direction.DESC });
 				setFilterSortName('Recent');
 				break;
 			case 'old':
-				setSearchFilter({ ...searchFilter, sort: 'createdAt', direction: 'ASC' });
+				setSearchFilter({ ...searchFilter, sort: 'createdAt', direction: Direction.ASC });
 				setFilterSortName('Oldest order');
 				break;
 			case 'likes':
-				setSearchFilter({ ...searchFilter, sort: 'memberLikes', direction: 'DESC' });
+				setSearchFilter({ ...searchFilter, sort: 'memberLikes', direction: Direction.DESC });
 				setFilterSortName('Likes');
 				break;
 			case 'views':
-				setSearchFilter({ ...searchFilter, sort: 'memberViews', direction: 'DESC' });
+				setSearchFilter({ ...searchFilter, sort: 'memberViews', direction: Direction.DESC });
 				setFilterSortName('Views');
 				break;
 		}
@@ -96,31 +95,31 @@ const {
 		setAnchorEl2(null);
 	};
 
-	const paginationChangeHandler = async (event: ChangeEvent<unknown>, value: number) => {
-		searchFilter.page = value;
-		await router.push(`/agent?input=${JSON.stringify(searchFilter)}`, `/agent?input=${JSON.stringify(searchFilter)}`, {
+	const paginationChangeHandler = async (_event: ChangeEvent<unknown>, value: number) => {
+		const updated = { ...searchFilter, page: value };
+		await router.push(`/agent?input=${JSON.stringify(updated)}`, `/agent?input=${JSON.stringify(updated)}`, {
 			scroll: false,
 		});
-		setCurrentPage(value);
 	};
 
-const likeMemberHandler = async (user: any, id: string) => {
-	try {
-		if (!id) return;
-		if (!user._id) throw new Error(Messages.error2);
+	const likeMemberHandler = async (user: CustomJwtPayload, id: string): Promise<void> => {
+		try {
+			if (!id) return;
+			if (!user._id) throw new Error(Messages.error2);
 
-		await likeTargetMember({
-			variables: { input: id },
-		});
+			await likeTargetMember({
+				variables: { input: id },
+			});
 
-		await getAgentsRefetch({ input: searchFilter });
+			await getAgentsRefetch({ input: searchFilter });
 
-		await sweetTopSmallSuccessAlert('success', 800);
-	} catch (error: any) {
-		console.error(error.message);
-		await sweetMixinErrorAlert(error.message).then();
-	}
-};
+			await sweetTopSmallSuccessAlert('success', 800);
+		} catch (error: unknown) {
+			const message = error instanceof Error ? error.message : String(error);
+			console.error(message);
+			await sweetMixinErrorAlert(message).then();
+		}
+	};
 	return (
 	<>
 		{device === 'mobile'? (	
@@ -134,9 +133,9 @@ const likeMemberHandler = async (user: any, id: string) => {
 								type="text"
 								placeholder={'Search for an agent'}
 								value={searchText}
-								onChange={(e: any) => setSearchText(e.target.value)}
-								onKeyDown={(event: any) => {
-									if (event.key == 'Enter') {
+								onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchText(e.target.value)}
+								onKeyDown={(event: React.KeyboardEvent<HTMLInputElement>) => {
+									if (event.key === 'Enter') {
 										setSearchFilter({
 											...searchFilter,
 											search: { ...searchFilter.search, text: searchText },
@@ -185,7 +184,7 @@ const likeMemberHandler = async (user: any, id: string) => {
 							{agents.length !== 0 && Math.ceil(total / searchFilter.limit) > 1 && (
 								<Stack className="pagination-box">
 									<Pagination
-										page={currentPage}
+										page={searchFilter.page ?? 1}
 										count={Math.ceil(total / searchFilter.limit)}
 										onChange={paginationChangeHandler}
 										shape="circular"
@@ -213,7 +212,7 @@ AgentList.defaultProps = {
 		page: 1,
 		limit: 10,
 		sort: 'createdAt',
-		direction: 'DESC',
+		direction: Direction.DESC,
 		search: {},
 	},
 };

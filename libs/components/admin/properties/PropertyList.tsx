@@ -85,12 +85,12 @@ const headCells: readonly HeadCell[] = [
 ];
 
 interface EnhancedTableProps {
-	numSelected: number;
-	onRequestSort: (event: React.MouseEvent<unknown>, property: keyof Data) => void;
-	onSelectAllClick: (event: React.ChangeEvent<HTMLInputElement>) => void;
-	order: Order;
-	orderBy: string;
-	rowCount: number;
+	numSelected?: number;
+	onRequestSort?: (event: React.MouseEvent<unknown>, property: keyof Data) => void;
+	onSelectAllClick?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+	order?: Order;
+	orderBy?: string;
+	rowCount?: number;
 }
 
 function EnhancedTableHead(props: EnhancedTableProps) {
@@ -115,11 +115,11 @@ function EnhancedTableHead(props: EnhancedTableProps) {
 
 interface PropertyPanelListType {
 	properties: Property[];
-	anchorEl: any;
-	menuIconClickHandler: any;
-	menuIconCloseHandler: any;
-	updatePropertyHandler: any;
-	removePropertyHandler: any;
+	anchorEl: (HTMLElement | null)[];
+	menuIconClickHandler: (e: React.MouseEvent<HTMLButtonElement>, index: number) => void;
+	menuIconCloseHandler: () => void;
+	updatePropertyHandler: (input: { _id: string; propertyStatus: string }) => void;
+	removePropertyHandler: (id: string) => void;
 }
 
 export const PropertyPanelList = (props: PropertyPanelListType) => {
@@ -132,11 +132,14 @@ export const PropertyPanelList = (props: PropertyPanelListType) => {
 		removePropertyHandler,
 	} = props;
 
+	/** APOLLO REQUESTS **/
+	/** LIFECYCLES **/
+	/** HANDLERS **/
+
 	return (
 		<Stack>
 			<TableContainer>
 				<Table sx={{ minWidth: 750 }} aria-labelledby="tableTitle" size={'medium'}>
-					{/*@ts-ignore*/}
 					<EnhancedTableHead />
 					<TableBody>
 						{properties.length === 0 && (
@@ -196,7 +199,7 @@ export const PropertyPanelList = (props: PropertyPanelListType) => {
 
 											{property.propertyStatus === PropertyStatus.ACTIVE && (
 												<>
-													<Button onClick={(e: any) => menuIconClickHandler(e, index)} className={'badge success'}>
+													<Button onClick={(e: React.MouseEvent<HTMLButtonElement>) => menuIconClickHandler(e, index)} className={'badge success'}>
 														{property.propertyStatus}
 													</Button>
 

@@ -30,18 +30,6 @@ interface Data {
 	block: string;
 }
 
-function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
-	if (b[orderBy] < a[orderBy]) {
-		return -1;
-	}
-	if (b[orderBy] > a[orderBy]) {
-		return 1;
-	}
-	return 0;
-}
-
-type Order = 'asc' | 'desc';
-
 interface HeadCell {
 	disablePadding: boolean;
 	id: keyof Data;
@@ -101,12 +89,12 @@ const headCells: readonly HeadCell[] = [
 ];
 
 interface EnhancedTableProps {
-	numSelected: number;
-	onRequestSort: (event: React.MouseEvent<unknown>, property: keyof Data) => void;
-	onSelectAllClick: (event: React.ChangeEvent<HTMLInputElement>) => void;
-	order: Order;
-	orderBy: string;
-	rowCount: number;
+	numSelected?: number;
+	onRequestSort?: (event: React.MouseEvent<unknown>, property: keyof Data) => void;
+	onSelectAllClick?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+	order?: 'asc' | 'desc';
+	orderBy?: string;
+	rowCount?: number;
 }
 
 function EnhancedTableHead(props: EnhancedTableProps) {
@@ -131,20 +119,23 @@ function EnhancedTableHead(props: EnhancedTableProps) {
 
 interface MemberPanelListType {
 	members: Member[];
-	anchorEl: any;
-	menuIconClickHandler: any;
-	menuIconCloseHandler: any;
-	updateMemberHandler: any;
+	anchorEl: Record<string | number, HTMLElement | null>;
+	menuIconClickHandler: (e: React.MouseEvent<HTMLButtonElement>, key: number | string) => void;
+	menuIconCloseHandler: () => void;
+	updateMemberHandler: (input: { _id: string; memberType?: string; memberStatus?: string }) => void;
 }
 
 export const MemberPanelList = (props: MemberPanelListType) => {
 	const { members, anchorEl, menuIconClickHandler, menuIconCloseHandler, updateMemberHandler } = props;
 
+	/** APOLLO REQUESTS **/
+	/** LIFECYCLES **/
+	/** HANDLERS **/
+
 	return (
 		<Stack>
 			<TableContainer>
 				<Table sx={{ minWidth: 750 }} aria-labelledby="tableTitle" size={'medium'}>
-					{/*@ts-ignore*/}
 					<EnhancedTableHead />
 					<TableBody>
 						{members.length === 0 && (
@@ -181,7 +172,7 @@ export const MemberPanelList = (props: MemberPanelListType) => {
 										<TableCell align="left">{member.memberPhone}</TableCell>
 
 										<TableCell align="center">
-											<Button onClick={(e: any) => menuIconClickHandler(e, index)} className={'badge success'}>
+											<Button onClick={(e: React.MouseEvent<HTMLButtonElement>) => menuIconClickHandler(e, index)} className={'badge success'}>
 												{member.memberType}
 											</Button>
 
@@ -214,7 +205,7 @@ export const MemberPanelList = (props: MemberPanelListType) => {
 										<TableCell align="center">{member.memberWarnings}</TableCell>
 										<TableCell align="center">{member.memberBlocks}</TableCell>
 										<TableCell align="center">
-											<Button onClick={(e: any) => menuIconClickHandler(e, member._id)} className={'badge success'}>
+											<Button onClick={(e: React.MouseEvent<HTMLButtonElement>) => menuIconClickHandler(e, member._id)} className={'badge success'}>
 												{member.memberStatus}
 											</Button>
 

@@ -1,19 +1,22 @@
-import React, { useState } from 'react';
+import React, { useCallback } from 'react';
 import { Stack, Box } from '@mui/material';
 import useDeviceDetect from '../../hooks/useDeviceDetect';
 import WestIcon from '@mui/icons-material/West';
 import EastIcon from '@mui/icons-material/East';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, Navigation, Pagination } from 'swiper';
-import { Property } from '../../types/property/property';
+
+const SWIPER_MODULES_MOBILE = [Autoplay];
+const SWIPER_MODULES_PC = [Autoplay, Navigation, Pagination];
+import { Properties, Property } from '../../types/property/property';
 import { PropertiesInquiry } from '../../types/property/property.input';
 import TrendPropertyCard from './TrendPropertyCard';
 import { useMutation, useQuery } from '@apollo/client';
 import { GET_PROPERTIES } from '../../../apollo/user/query';
-import { T } from '../../types/common';
-import { sweetMixinErrorAlert, sweetTopSmallSuccessAlert } from '../../sweetAlert';
+import { sweetMixinErrorAlert } from '../../sweetAlert';
 import { LIKE_TARGET_PROPERTY } from '../../../apollo/user/mutation';
 import { Message } from '../../enums/common.enum';
+import { CustomJwtPayload } from '../../types/customJwtPayload';
 
 interface TrendPropertiesProps {
 	initialInput: PropertiesInquiry;
@@ -22,47 +25,35 @@ interface TrendPropertiesProps {
 const TrendProperties = (props: TrendPropertiesProps) => {
 	const { initialInput } = props;
 	const device = useDeviceDetect();
-	const [trendProperties, setTrendProperties] = useState<Property[]>([]);
-
 	/** APOLLO REQUESTS **/
 
 	const [likeTargetProperty] = useMutation(LIKE_TARGET_PROPERTY);
 
 	const {
-		loading: getPropertiesLoading,
 		data: getPropertiesData,
-		error: getPropertiesError,
 		refetch: getPropertiesRefetch,
-	} = useQuery(GET_PROPERTIES, {
-		fetchPolicy: 'cache-and-network',
+	} = useQuery<{ getProperties: Properties }>(GET_PROPERTIES, {
+		fetchPolicy: 'cache-first',
 		variables: { input: initialInput },
-		notifyOnNetworkStatusChange: true,
-		onCompleted: (data: T) => {
-			setTrendProperties(data?.getProperties?.list);
-		},
 	});
+
+	const trendProperties = getPropertiesData?.getProperties?.list ?? [];
 
 	/** HANDLERS **/
 
-	const likePropertyHandler = async (user: T, id: string) => {
+	const likePropertyHandler = useCallback(async (user: CustomJwtPayload, id: string): Promise<void> => {
 		try {
 			if (!id) return;
 			if (!user._id) throw new Error(Message.NOT_AUTHENTICATED);
 
-			await likeTargetProperty({
-				variables: { input: id },
-			});
-
+			await likeTargetProperty({ variables: { input: id } });
 			await getPropertiesRefetch({ input: initialInput });
-
-			// Alert removed - no notification on like
-		} catch (err: any) {
-			console.log('Error, likePropertyHandler', err.message);
-			sweetMixinErrorAlert(err.message).then();
+		} catch (err: unknown) {
+			const message = err instanceof Error ? err.message : Message.SOMETHING_WENT_WRONG;
+			console.log('Error, likePropertyHandler', message);
+			sweetMixinErrorAlert(message).then();
 		}
-	};
-
-	if (!trendProperties) return null;
+	}, [likeTargetProperty, getPropertiesRefetch, initialInput]);
 
 	if (device === 'mobile') {
 		return (
@@ -82,7 +73,7 @@ const TrendProperties = (props: TrendPropertiesProps) => {
 								slidesPerView={'auto'}
 								centeredSlides={true}
 								spaceBetween={15}
-								modules={[Autoplay]}
+								modules={SWIPER_MODULES_MOBILE}
 							>
 								{trendProperties.map((property: Property) => {
 									return (
@@ -124,7 +115,7 @@ const TrendProperties = (props: TrendPropertiesProps) => {
 								className={'trend-property-swiper'}
 								slidesPerView={'auto'}
 								spaceBetween={15}
-								modules={[Autoplay, Navigation, Pagination]}
+								modules={SWIPER_MODULES_PC}
 								navigation={{
 									nextEl: '.swiper-trend-next',
 									prevEl: '.swiper-trend-prev',
@@ -159,4 +150,4 @@ TrendProperties.defaultProps = {
 	},
 };
 
-export default TrendProperties;
+export default React.memo(TrendProperties);

@@ -10,20 +10,26 @@ import { TabContext } from '@mui/lab';
 import TablePagination from '@mui/material/TablePagination';
 import CommunityArticleList from '../../../libs/components/admin/community/CommunityArticleList';
 import { AllBoardArticlesInquiry } from '../../../libs/types/board-article/board-article.input';
-import { BoardArticle } from '../../../libs/types/board-article/board-article';
+import { BoardArticle, BoardArticles } from '../../../libs/types/board-article/board-article';
 import { BoardArticleCategory, BoardArticleStatus } from '../../../libs/enums/board-article.enum';
+import { Direction } from '../../../libs/enums/common.enum';
 import { sweetConfirmAlert, sweetErrorHandling } from '../../../libs/sweetAlert';
 import { BoardArticleUpdate } from '../../../libs/types/board-article/board-article.update';
 import { REMOVE_BOARD_ARTICLE_BY_ADMIN, UPDATE_BOARD_ARTICLE_BY_ADMIN } from '../../../apollo/admin/mutation';
 import { useMutation, useQuery } from '@apollo/client';
 import { GET_ALL_BOARD_ARTICLES_BY_ADMIN } from '../../../apollo/admin/query';
-import { T } from '../../../libs/types/common';
 
-const AdminCommunity: NextPage = ({ initialInquiry, ...props }: any) => {
-	const [anchorEl, setAnchorEl] = useState<any>([]);
+interface AdminCommunityProps { initialInquiry?: AllBoardArticlesInquiry; }
+const defaultCommunityInquiry: AllBoardArticlesInquiry = {
+	page: 1,
+	limit: 10,
+	sort: 'createdAt',
+	direction: Direction.DESC,
+	search: {},
+};
+const AdminCommunity: NextPage<AdminCommunityProps> = ({ initialInquiry = defaultCommunityInquiry }) => {
+	const [anchorEl, setAnchorEl] = useState<(HTMLElement | null)[]>([]);
 	const [communityInquiry, setCommunityInquiry] = useState<AllBoardArticlesInquiry>(initialInquiry);
-	const [articles, setArticles] = useState<BoardArticle[]>([]);
-	const [articleTotal, setArticleTotal] = useState<number>(0);
 	const [value, setValue] = useState(
 		communityInquiry?.search?.articleStatus ? communityInquiry?.search?.articleStatus : 'ALL',
 	);
@@ -38,36 +44,34 @@ const AdminCommunity: NextPage = ({ initialInquiry, ...props }: any) => {
 		data: getAllBoardArticlesByAdminData,
 		error: getAllBoardArticlesByAdminError,
 		refetch: getAllBoardArticlesByAdminRefetch,
-	} = useQuery(GET_ALL_BOARD_ARTICLES_BY_ADMIN, {
+	} = useQuery<{ getAllBoardArticleByAdmin: BoardArticles }>(GET_ALL_BOARD_ARTICLES_BY_ADMIN, {
 		fetchPolicy: 'network-only',
 		variables: { input: communityInquiry },
 		notifyOnNetworkStatusChange: true,
-		onCompleted: (data: T) => {
-			setArticles(data?.getAllBoardArticleByAdmin?.list || []);
-			setArticleTotal(data?.getAllBoardArticleByAdmin?.metaCounter[0]?.total ?? 0);
-		},
 	});
+
+	const articles = getAllBoardArticlesByAdminData?.getAllBoardArticleByAdmin?.list ?? [];
+	const articleTotal = getAllBoardArticlesByAdminData?.getAllBoardArticleByAdmin?.metaCounter?.[0]?.total ?? 0;
 
 	/** LIFECYCLES **/
 	useEffect(() => {
 		getAllBoardArticlesByAdminRefetch({ input: communityInquiry }).then();
-	}, [communityInquiry]);
+	}, [communityInquiry, getAllBoardArticlesByAdminRefetch]);
 
 	/** HANDLERS **/
-	const changePageHandler = async (event: unknown, newPage: number) => {
-		communityInquiry.page = newPage + 1;
-		await getAllBoardArticlesByAdminRefetch({ input: communityInquiry });
-		setCommunityInquiry({ ...communityInquiry });
+	const changePageHandler = async (_event: unknown, newPage: number) => {
+		const updated = { ...communityInquiry, page: newPage + 1 };
+		await getAllBoardArticlesByAdminRefetch({ input: updated });
+		setCommunityInquiry(updated);
 	};
 
 	const changeRowsPerPageHandler = async (event: React.ChangeEvent<HTMLInputElement>) => {
-		communityInquiry.limit = parseInt(event.target.value, 10);
-		communityInquiry.page = 1;
-		await getAllBoardArticlesByAdminRefetch({ input: communityInquiry });
-		setCommunityInquiry({ ...communityInquiry });
+		const updated = { ...communityInquiry, limit: parseInt(event.target.value, 10), page: 1 };
+		await getAllBoardArticlesByAdminRefetch({ input: updated });
+		setCommunityInquiry(updated);
 	};
 
-	const menuIconClickHandler = (e: any, index: number) => {
+	const menuIconClickHandler = (e: React.MouseEvent<HTMLButtonElement>, index: number) => {
 		const tempAnchor = anchorEl.slice();
 		tempAnchor[index] = e.currentTarget;
 		setAnchorEl(tempAnchor);
@@ -77,22 +81,21 @@ const AdminCommunity: NextPage = ({ initialInquiry, ...props }: any) => {
 		setAnchorEl([]);
 	};
 
-	const tabChangeHandler = async (event: any, newValue: string) => {
+	const tabChangeHandler = (newValue: string) => {
 		setValue(newValue);
-
-		setCommunityInquiry({ ...communityInquiry, page: 1, sort: 'createdAt' });
 
 		switch (newValue) {
 			case 'ACTIVE':
-				setCommunityInquiry({ ...communityInquiry, search: { articleStatus: BoardArticleStatus.ACTIVE } });
+				setCommunityInquiry({ ...communityInquiry, page: 1, sort: 'createdAt', search: { articleStatus: BoardArticleStatus.ACTIVE } });
 				break;
 			case 'DELETE':
-				setCommunityInquiry({ ...communityInquiry, search: { articleStatus: BoardArticleStatus.DELETE } });
+				setCommunityInquiry({ ...communityInquiry, page: 1, sort: 'createdAt', search: { articleStatus: BoardArticleStatus.DELETE } });
 				break;
-			default:
-				delete communityInquiry?.search?.articleStatus;
-				setCommunityInquiry({ ...communityInquiry });
+			default: {
+				const { articleStatus: _, ...restSearch } = communityInquiry?.search ?? {};
+				setCommunityInquiry({ ...communityInquiry, page: 1, sort: 'createdAt', search: restSearch });
 				break;
+			}
 		}
 	};
 
@@ -111,16 +114,17 @@ const AdminCommunity: NextPage = ({ initialInquiry, ...props }: any) => {
 					},
 				});
 			} else {
-				delete communityInquiry?.search?.articleCategory;
-				setCommunityInquiry({ ...communityInquiry });
+				const { articleCategory: _, ...restSearch } = communityInquiry?.search ?? {};
+				setCommunityInquiry({ ...communityInquiry, page: 1, sort: 'createdAt', search: restSearch });
 			}
-		} catch (err: any) {
-			console.log('searchTypeHandler: ', err.message);
+		} catch (err: unknown) {
+			console.log('searchTypeHandler: ', err instanceof Error ? err.message : String(err));
 		}
 	};
 
-	const updateArticleHandler = async (updateData: BoardArticleUpdate) => {
+	const updateArticleHandler = async (input: { _id: string; articleStatus: string }) => {
 		try {
+			const updateData: BoardArticleUpdate = { _id: input._id, articleStatus: input.articleStatus as BoardArticleStatus };
 			console.log('+updateData: ', updateData);
 			await updateBoardArticleByAdmin({
 				variables: {
@@ -128,7 +132,7 @@ const AdminCommunity: NextPage = ({ initialInquiry, ...props }: any) => {
 				},
 			});
 			menuIconCloseHandler();
-		} catch (err: any) {
+		} catch (err: unknown) {
 			menuIconCloseHandler();
 			sweetErrorHandling(err).then();
 		}
@@ -144,7 +148,7 @@ const AdminCommunity: NextPage = ({ initialInquiry, ...props }: any) => {
 				});
 				await getAllBoardArticlesByAdminRefetch({ input: communityInquiry });
 			}
-		} catch (err: any) {
+		} catch (err: unknown) {
 			sweetErrorHandling(err).then();
 		}
 	};
@@ -163,21 +167,21 @@ const AdminCommunity: NextPage = ({ initialInquiry, ...props }: any) => {
 						<Box component={'div'}>
 							<List className={'tab-menu'}>
 								<ListItem
-									onClick={(e: any) => tabChangeHandler(e, 'ALL')}
+									onClick={() => tabChangeHandler('ALL')}
 									value="ALL"
 									className={value === 'ALL' ? 'li on' : 'li'}
 								>
 									All
 								</ListItem>
 								<ListItem
-									onClick={(e: any) => tabChangeHandler(e, 'ACTIVE')}
+									onClick={() => tabChangeHandler('ACTIVE')}
 									value="ACTIVE"
 									className={value === 'ACTIVE' ? 'li on' : 'li'}
 								>
 									Active
 								</ListItem>
 								<ListItem
-									onClick={(e: any) => tabChangeHandler(e, 'DELETE')}
+									onClick={() => tabChangeHandler('DELETE')}
 									value="DELETE"
 									className={value === 'DELETE' ? 'li on' : 'li'}
 								>
@@ -222,16 +226,6 @@ const AdminCommunity: NextPage = ({ initialInquiry, ...props }: any) => {
 			</Box>
 		</Box>
 	);
-};
-
-AdminCommunity.defaultProps = {
-	initialInquiry: {
-		page: 1,
-		limit: 10,
-		sort: 'createdAt',
-		direction: 'DESC',
-		search: {},
-	},
 };
 
 export default withAdminLayout(AdminCommunity);

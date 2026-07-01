@@ -1,28 +1,24 @@
 import React from 'react';
-import { useRouter } from 'next/router';
 import { Stack } from '@mui/material';
+import Image from 'next/image';
 import useDeviceDetect from '../../hooks/useDeviceDetect';
 import { Member } from '../../types/member/member';
-
 
 interface TopAgentProps {
 	agent: Member;
 }
+
 const TopAgentCard = (props: TopAgentProps) => {
 	const { agent } = props;
 	const device = useDeviceDetect();
-	const router = useRouter();
 	const agentImage = agent?.memberImage
 		? `${process.env.REACT_APP_API_URL}/${agent?.memberImage}`
 		: '/img/profile/defaultUser.svg';
 
-	/** HANDLERS **/
-
 	if (device === 'mobile') {
 		return (
 			<Stack className="top-agent-card">
-				<img src={agentImage} alt="" />
-
+				<Image src={agentImage} alt={agent?.memberNick ?? ''} width={100} height={100} style={{ objectFit: 'cover' }} />
 				<strong>{agent?.memberNick}</strong>
 				<span>{agent?.memberType}</span>
 			</Stack>
@@ -30,8 +26,7 @@ const TopAgentCard = (props: TopAgentProps) => {
 	} else {
 		return (
 			<Stack className="top-agent-card">
-				<img src={agentImage} alt="" />
-
+				<Image src={agentImage} alt={agent?.memberNick ?? ''} width={100} height={100} style={{ objectFit: 'cover' }} />
 				<strong>{agent?.memberNick}</strong>
 				<span>{agent?.memberType}</span>
 			</Stack>
@@ -39,4 +34,4 @@ const TopAgentCard = (props: TopAgentProps) => {
 	}
 };
 
-export default TopAgentCard;
+export default React.memo(TopAgentCard);

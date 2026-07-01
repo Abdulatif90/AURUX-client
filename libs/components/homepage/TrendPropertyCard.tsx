@@ -10,10 +10,11 @@ import { REACT_APP_API_URL } from '../../config';
 import { useRouter } from 'next/router';
 import { useReactiveVar } from '@apollo/client';
 import { userVar } from '../../../apollo/store';
+import { CustomJwtPayload } from '../../types/customJwtPayload';
 
 interface TrendPropertyCardProps {
 	property: Property;
-	likePropertyHandler: any;
+	likePropertyHandler: (user: CustomJwtPayload, id: string) => Promise<void>;
 	myFavorites?: boolean;
 	recentlyVisited?: boolean;
 }
@@ -26,7 +27,6 @@ const TrendPropertyCard = (props: TrendPropertyCardProps) => {
 
 	/** HANDLERS **/
 const pushDetailHandler = async (propertyId: string) => {
-		console.log('property id:', propertyId);
 		await router.push({ pathname: '/property/detail', query: { id: propertyId } });
 	};
 	if (device === 'mobile') {
@@ -150,4 +150,4 @@ const pushDetailHandler = async (propertyId: string) => {
 	}
 };
 
-export default TrendPropertyCard;
+export default React.memo(TrendPropertyCard);

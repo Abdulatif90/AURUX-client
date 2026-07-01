@@ -14,15 +14,14 @@ import AddRoundedIcon from '@mui/icons-material/AddRounded';
 import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
 import { NoticeList } from '../../../libs/components/admin/cs/NoticeList';
 
-const AdminNotice: NextPage = (props: any) => {
-	const [anchorEl, setAnchorEl] = useState<[] | HTMLElement[]>([]);
+const AdminNotice: NextPage = () => {
+	const [anchorEl, setAnchorEl] = useState<(HTMLElement | null)[]>([]);
 
 	/** APOLLO REQUESTS **/
 	/** LIFECYCLES **/
 	/** HANDLERS **/
 
 	return (
-		// @ts-ignore
 		<Box component={'div'} className={'content'}>
 			<Box component={'div'} className={'title flex_space'}>
 				<Typography variant={'h2'}>Notice Management</Typography>

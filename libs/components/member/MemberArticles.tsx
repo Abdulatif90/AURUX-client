@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { NextPage } from 'next';
 import { Pagination, Stack, Typography } from '@mui/material';
 import useDeviceDetect from '../../hooks/useDeviceDetect';
 import { useRouter } from 'next/router';
 import CommunityCard from '../common/CommunityCard';
-import { T } from '../../types/common';
-import { BoardArticle } from '../../types/board-article/board-article';
+import { BoardArticle, BoardArticles } from '../../types/board-article/board-article';
+import { CustomJwtPayload } from '../../types/customJwtPayload';
 import { BoardArticlesInquiry } from '../../types/board-article/board-article.input';
 import { useMutation, useQuery } from '@apollo/client';
 import { GET_BOARD_ARTICLES } from '../../../apollo/user/query';
@@ -20,30 +19,24 @@ interface MemberArticlesProps {
 const MemberArticles = ({ initialInput }: MemberArticlesProps) => {
 	const device = useDeviceDetect();
 	const router = useRouter();
-	const [total, setTotal] = useState<number>(0);
 	const memberId = router.query.memberId;
 	const [searchFilter, setSearchFilter] = useState<BoardArticlesInquiry>(initialInput);
-	const [memberBoArticles, setMemberBoArticles] = useState<BoardArticle[]>([]);
 
 	/** APOLLO REQUESTS **/
 	const [ likeTargetBoardArticle ] = useMutation(LIKE_TARGET_BOARD_ARTICLE);
 
-	const { 
+	const {
 		loading: boardArticlesLoading,
 		error: getBoardArticlesError,
 		data: boardArticlesData,
-		refetch: boardArticlesRefetch
-	} = useQuery(GET_BOARD_ARTICLES, {
-		fetchPolicy: 'network-only',
-		variables: {
-			input: searchFilter
-		},
-		notifyOnNetworkStatusChange: true,
-		onCompleted: (data: T) => {
-			setTotal(data?.getBoardArticles?.total || 0);
-			setMemberBoArticles(data?.getBoardArticles?.lists || []);
-		}
+		refetch: boardArticlesRefetch,
+	} = useQuery<{ getBoardArticles: BoardArticles }>(GET_BOARD_ARTICLES, {
+		fetchPolicy: 'cache-and-network',
+		variables: { input: searchFilter },
 	});
+
+	const memberBoArticles = boardArticlesData?.getBoardArticles?.list ?? [];
+	const total = boardArticlesData?.getBoardArticles?.metaCounter?.[0]?.total ?? 0;
 
 	/** LIFECYCLES **/
 	useEffect(() => {
@@ -53,12 +46,14 @@ const MemberArticles = ({ initialInput }: MemberArticlesProps) => {
     }
 }, [memberId, initialInput]);
 
+	const LIKE_SUCCESS_ALERT_DURATION_MS = 800;
+
 	/** HANDLERS **/
-	const paginationHandler = (e: any, value: number) => {
+	const paginationHandler = (_event: React.ChangeEvent<unknown>, value: number): void => {
 		setSearchFilter({ ...searchFilter, page: value });
 	};
 
-	const likeBoArticleHandler = async (e: any, user: any, id: string) => {
+	const likeBoArticleHandler = async (e: React.MouseEvent, user: CustomJwtPayload, id: string): Promise<void> => {
 		try {
 			e.stopPropagation();
 			if( !id ) return;
@@ -73,13 +68,22 @@ const MemberArticles = ({ initialInput }: MemberArticlesProps) => {
 				}
 			});
 			await boardArticlesRefetch({ input: searchFilter });
-			await sweetTopSmallSuccessAlert('Success', 800);
+			await sweetTopSmallSuccessAlert('Success', LIKE_SUCCESS_ALERT_DURATION_MS);
 
-		} catch (err: any) {
-			console.log('Error, likeBoArticleHandler', err.message);
-			sweetMixinErrorAlert(err.message).then();
+		} catch (err: unknown) {
+			const message = err instanceof Error ? err.message : Messages.error1;
+			console.log('Error, likeBoArticleHandler', message);
+			sweetMixinErrorAlert(message).then();
 		}
 	};
+
+	if (boardArticlesLoading) {
+		return <div id="member-articles-page"><p>Loading...</p></div>;
+	}
+
+	if (getBoardArticlesError) {
+		return <div id="member-articles-page"><p>Failed to load articles.</p></div>;
+	}
 
 	if (device === 'mobile') {
 		return <div>MEMBER ARTICLES MOBILE</div>;

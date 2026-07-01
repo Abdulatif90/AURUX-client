@@ -20,7 +20,7 @@ const Join: NextPage = () => {
 		setLoginView(state);
 	};
 
-	const checkUserTypeHandler = (e: any) => {
+	const checkUserTypeHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const checked = e.target.checked;
 		if (checked) {
 			const value = e.target.name;
@@ -30,7 +30,7 @@ const Join: NextPage = () => {
 		}
 	};
 
-	const handleInput = useCallback((name: any, value: any) => {
+	const handleInput = useCallback((name: string, value: string) => {
 		setInput((prev) => {
 			return { ...prev, [name]: value };
 		});
@@ -46,7 +46,7 @@ const Join: NextPage = () => {
 			await logIn(input.nick, input.password);
 			await sweetMixinSuccessAlert('Welcome back! Login successful.');
 			await router.push(`${router.query.referrer ?? '/'}`);
-		} catch (err: any) {
+		} catch (err: unknown) {
 			// Errors are already handled in auth/index.ts
 			console.error('Login error:', err);
 		}
@@ -87,7 +87,7 @@ const Join: NextPage = () => {
 			setInput({ nick: '', password: '', phone: '', type: 'USER' });
 			// Show success message
 			await sweetMixinSuccessAlert('Registration successful! Please login with your credentials.');
-		} catch (err: any) {
+		} catch (err: unknown) {
 			// Errors are already handled in auth/index.ts with sweetAlert
 			console.error('Signup error:', err);
 		}
@@ -103,7 +103,6 @@ const Join: NextPage = () => {
 				<Stack className={'container'}>
 					<Stack className={'main'}>
 						<Stack className={'left'}>
-							{/* @ts-ignore */}
 							<Box className={'logo'}>
 								<img src="/img/logo/logoText.svg" alt="" />
 								<span>Aurux</span>
@@ -122,8 +121,8 @@ const Join: NextPage = () => {
 										onChange={(e) => handleInput('nick', e.target.value)}
 										required={true}
 										onKeyDown={(event) => {
-											if (event.key == 'Enter' && loginView) doLogin();
-											if (event.key == 'Enter' && !loginView) doSignUp();
+											if (event.key === 'Enter' && loginView) doLogin();
+											if (event.key === 'Enter' && !loginView) doSignUp();
 										}}
 									/>
 								</div>
@@ -136,8 +135,8 @@ const Join: NextPage = () => {
 										onChange={(e) => handleInput('password', e.target.value)}
 										required={true}
 										onKeyDown={(event) => {
-											if (event.key == 'Enter' && loginView) doLogin();
-											if (event.key == 'Enter' && !loginView) doSignUp();
+											if (event.key === 'Enter' && loginView) doLogin();
+											if (event.key === 'Enter' && !loginView) doSignUp();
 										}}
 									/>
 								</div>
@@ -155,7 +154,7 @@ const Join: NextPage = () => {
 											}}
 											required={true}
 											onKeyDown={(event) => {
-												if (event.key == 'Enter') doSignUp();
+												if (event.key === 'Enter') doSignUp();
 											}}
 											maxLength={15}
 										/>
@@ -174,7 +173,7 @@ const Join: NextPage = () => {
 															size="small"
 															name={'USER'}
 															onChange={checkUserTypeHandler}
-															checked={input?.type == 'USER'}
+															checked={input?.type === 'USER'}
 														/>
 													}
 													label="User"
@@ -187,7 +186,7 @@ const Join: NextPage = () => {
 															size="small"
 															name={'AGENT'}
 															onChange={checkUserTypeHandler}
-															checked={input?.type == 'AGENT'}
+															checked={input?.type === 'AGENT'}
 														/>
 													}
 													label="Agent"
@@ -210,7 +209,7 @@ const Join: NextPage = () => {
 									<Button
 										variant="contained"
 										endIcon={<img src="/img/icons/rightup.svg" alt="" />}
-										disabled={input.nick == '' || input.password == ''}
+										disabled={input.nick === '' || input.password === ''}
 										onClick={doLogin}
 									>
 										LOGIN
@@ -218,7 +217,7 @@ const Join: NextPage = () => {
 								) : (
 									<Button
 										variant="contained"
-										disabled={input.nick == '' || input.password == '' || input.phone == '' || input.type == ''}
+										disabled={input.nick === '' || input.password === '' || input.phone === '' || input.type === ''}
 										onClick={doSignUp}
 										endIcon={<img src="/img/icons/rightup.svg" alt="" />}
 									>

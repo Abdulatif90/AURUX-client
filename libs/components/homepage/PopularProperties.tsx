@@ -1,16 +1,18 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Stack, Box } from '@mui/material';
 import useDeviceDetect from '../../hooks/useDeviceDetect';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, Navigation, Pagination } from 'swiper';
+
+const SWIPER_MODULES_MOBILE = [Autoplay];
+const SWIPER_MODULES_PC = [Autoplay, Navigation, Pagination];
 import WestIcon from '@mui/icons-material/West';
 import EastIcon from '@mui/icons-material/East';
 import PopularPropertyCard from './PopularPropertyCard';
-import { Property } from '../../types/property/property';
+import { Properties, Property } from '../../types/property/property';
 import Link from 'next/link';
 import { PropertiesInquiry } from '../../types/property/property.input';
 import { GET_PROPERTIES } from '../../../apollo/user/query';
-import { T } from '../../types/common';
 import { useQuery } from '@apollo/client';
 
 interface PopularPropertiesProps {
@@ -20,27 +22,14 @@ interface PopularPropertiesProps {
 const PopularProperties = (props: PopularPropertiesProps) => {
 	const { initialInput } = props;
 	const device = useDeviceDetect();
-	const [popularProperties, setPopularProperties] = useState<Property[]>([]);
-
 	/** APOLLO REQUESTS **/
 
-	const {
-		loading: getPropertiesLoading,
-		data: getPropertiesData,
-		error: getPropertiesError,
-		refetch: getPropertiesRefetch,
-	} = useQuery(GET_PROPERTIES, {
-		fetchPolicy: 'cache-and-network',
+	const { data: getPropertiesData } = useQuery<{ getProperties: Properties }>(GET_PROPERTIES, {
+		fetchPolicy: 'cache-first',
 		variables: { input: initialInput },
-		notifyOnNetworkStatusChange: true,
-		onCompleted: (data: T) => {
-			setPopularProperties(data?.getProperties?.list);
-		},
 	});
-	
-	/** HANDLERS **/
 
-	if (!popularProperties) return null;
+	const popularProperties = getPropertiesData?.getProperties?.list ?? [];
 
 	if (device === 'mobile') {
 		return (
@@ -55,7 +44,7 @@ const PopularProperties = (props: PopularPropertiesProps) => {
 							slidesPerView={'auto'}
 							centeredSlides={true}
 							spaceBetween={25}
-							modules={[Autoplay]}
+							modules={SWIPER_MODULES_MOBILE}
 						>
 							{popularProperties.map((property: Property) => {
 								return (
@@ -92,7 +81,7 @@ const PopularProperties = (props: PopularPropertiesProps) => {
 							className={'popular-property-swiper'}
 							slidesPerView={'auto'}
 							spaceBetween={25}
-							modules={[Autoplay, Navigation, Pagination]}
+							modules={SWIPER_MODULES_PC}
 							navigation={{
 								nextEl: '.swiper-popular-next',
 								prevEl: '.swiper-popular-prev',
@@ -131,4 +120,4 @@ PopularProperties.defaultProps = {
 	},
 };
 
-export default PopularProperties;
+export default React.memo(PopularProperties);

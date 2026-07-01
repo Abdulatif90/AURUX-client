@@ -11,7 +11,13 @@ import { MemberUpdate } from '../../types/member/member.update';
 import { UPDATE_MEMBER } from '../../../apollo/user/mutation';
 import { sweetErrorHandling, sweetMixinSuccessAlert } from '../../sweetAlert';
 
-const MyProfile: NextPage = ({ initialValues, ...props }: any) => {
+interface MyProfileProps {
+	initialValues?: MemberUpdate;
+}
+
+const defaultMyProfileValues: MemberUpdate = { _id: '' };
+
+const MyProfile: NextPage<MyProfileProps> = ({ initialValues = defaultMyProfileValues }: MyProfileProps) => {
 	const device = useDeviceDetect();
 	const user = useReactiveVar(userVar);
 	const [updateData, setUpdateData] = useState<MemberUpdate>(initialValues);
@@ -22,22 +28,23 @@ const MyProfile: NextPage = ({ initialValues, ...props }: any) => {
 
 	/** LIFECYCLES **/
 	useEffect(() => {
-		setUpdateData({
-			...updateData,
+		setUpdateData((prev) => ({
+			...prev,
+			_id: user._id ?? prev._id,
 			memberNick: user.memberNick,
 			memberPhone: user.memberPhone,
 			memberAddress: user.memberAddress,
 			memberImage: user.memberImage,
-		});
+		}));
 	}, [user]);
 
 	/** HANDLERS **/
-	const uploadImage = async (e: any) => {
+	const uploadImage = async (e: React.ChangeEvent<HTMLInputElement>): Promise<string | undefined> => {
 		try {
 			// Token'ni dinamik olamiz
 			const currentToken = getJwtToken();
 			
-			const image = e.target.files[0];
+			const image = e.target.files?.[0];
 			console.log('+image:', image);
 
 			if (!image) {
@@ -97,35 +104,30 @@ const MyProfile: NextPage = ({ initialValues, ...props }: any) => {
 	const updatePropertyHandler = useCallback(async () => {
 		try {
 			if (!user._id) throw new Error(Messages.error2);
-			updateData._id = user._id;
 			const result = await updateMember({
 				variables: {
-					input: updateData,
+					input: { ...updateData, _id: user._id },
 				},
 			});
 
-			//@ts-ignore
-			const jwtToken = result.data.updateMember?.accessToken;
+			const resultData = result.data as { updateMember?: { accessToken?: string } } | undefined;
+			const jwtToken = resultData?.updateMember?.accessToken;
 			await updateStorage({ jwtToken });
-			updateUserInfo(result.data.updateMember?.accessToken);
+			updateUserInfo(resultData?.updateMember?.accessToken);
 			await sweetMixinSuccessAlert('Information updated successfully');
-		} catch (err: any) {
-			sweetErrorHandling(err).then();
+		} catch (err: unknown) {
+			sweetErrorHandling(err as Error).then();
 		}
 	}, [updateData]);
 
-	const doDisabledCheck = () => {
-		if (
+	const doDisabledCheck = (): boolean => {
+		return (
 			updateData.memberNick === '' ||
 			updateData.memberPhone === '' ||
 			updateData.memberAddress === '' ||
 			updateData.memberImage === ''
-		) {
-			return true;
-		}
+		);
 	};
-
-	console.log('+updateData', updateData);
 
 	if (device === 'mobile') {
 		return <>MY PROFILE PAGE MOBILE</>;

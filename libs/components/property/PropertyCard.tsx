@@ -9,12 +9,13 @@ import { formatterStr } from '../../utils';
 import { REACT_APP_API_URL, topPropertyRank } from '../../config';
 import { useReactiveVar } from '@apollo/client';
 import { userVar } from '../../../apollo/store';
+import { CustomJwtPayload } from '../../types/customJwtPayload';
 import IconButton from '@mui/material/IconButton';
 import RemoveRedEyeIcon from '@mui/icons-material/RemoveRedEye';
 
 interface PropertyCardType {
 	property: Property;
-	likePropertyHandler?: any;
+	likePropertyHandler?: (user: CustomJwtPayload, id: string) => Promise<void>;
 	myFavorites?: boolean;
 	recentlyVisited?: boolean;
 }
@@ -101,7 +102,7 @@ const PropertyCard = (props: PropertyCardType) => {
 									<RemoveRedEyeIcon />
 								</IconButton>
 								<Typography className="view-cnt">{property?.propertyViews}</Typography>
-								<IconButton color={'default'} onClick={() => likePropertyHandler(user, property?._id)}>
+								<IconButton color={'default'} onClick={() => likePropertyHandler?.(user, property._id)}>
 									{myFavorites ? (
 										<FavoriteIcon color="primary" />
 									) : property?.meLiked && property?.meLiked[0]?.myFavorite ? (

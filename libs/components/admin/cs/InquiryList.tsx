@@ -1,5 +1,4 @@
 import React from 'react';
-import { useRouter } from 'next/router';
 import Link from 'next/link';
 import {
 	TableCell,
@@ -26,8 +25,6 @@ interface Data {
 	status: string;
 	id?: string;
 }
-
-type Order = 'asc' | 'desc';
 
 interface HeadCell {
 	disablePadding: boolean;
@@ -70,12 +67,12 @@ const headCells: readonly HeadCell[] = [
 ];
 
 interface EnhancedTableProps {
-	numSelected: number;
-	onRequestSort: (event: React.MouseEvent<unknown>, property: keyof Data) => void;
-	onSelectAllClick: (event: React.ChangeEvent<HTMLInputElement>) => void;
-	order: Order;
-	orderBy: string;
-	rowCount: number;
+	numSelected?: number;
+	onRequestSort?: (event: React.MouseEvent<unknown>, property: keyof Data) => void;
+	onSelectAllClick?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+	order?: 'asc' | 'desc';
+	orderBy?: string;
+	rowCount?: number;
 }
 
 function EnhancedTableHead(props: EnhancedTableProps) {
@@ -100,12 +97,12 @@ function EnhancedTableHead(props: EnhancedTableProps) {
 
 interface InquiryPanelListType {
 	dense?: boolean;
-	membersData?: any;
-	searchMembers?: any;
-	anchorEl?: any;
-	handleMenuIconClick?: any;
-	handleMenuIconClose?: any;
-	generateMentorTypeHandle?: any;
+	membersData?: unknown;
+	searchMembers?: unknown;
+	anchorEl?: (HTMLElement | null)[];
+	handleMenuIconClick?: (e: React.MouseEvent<HTMLButtonElement>, index: number) => void;
+	handleMenuIconClose?: () => void;
+	generateMentorTypeHandle?: (id: string, type: string, action: string) => void;
 }
 
 export const InquiryList = (props: InquiryPanelListType) => {
@@ -118,8 +115,6 @@ export const InquiryList = (props: InquiryPanelListType) => {
 		handleMenuIconClose,
 		generateMentorTypeHandle,
 	} = props;
-	const router = useRouter();
-
 	/** APOLLO REQUESTS **/
 	/** LIFECYCLES **/
 	/** HANDLERS **/
@@ -128,13 +123,10 @@ export const InquiryList = (props: InquiryPanelListType) => {
 		<Stack>
 			<TableContainer>
 				<Table sx={{ minWidth: 750 }} aria-labelledby="tableTitle" size={dense ? 'small' : 'medium'}>
-					{/*@ts-ignore*/}
 					<EnhancedTableHead />
 					<TableBody>
-						{[1, 2, 3, 4, 5].map((ele: any, index: number) => {
+						{[1, 2, 3, 4, 5].map((_: number, index: number) => {
 							const member_image = '/img/profile/defaultUser.svg';
-
-							let status_class_name = '';
 
 							return (
 								<TableRow hover key={'member._id'} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
@@ -154,7 +146,7 @@ export const InquiryList = (props: InquiryPanelListType) => {
 									</TableCell>
 									<TableCell align="left">member.mb_phone</TableCell>
 									<TableCell align="center">
-										<Button onClick={(e: any) => handleMenuIconClick(e, index)} className={'badge success'}>
+										<Button onClick={(e: React.MouseEvent<HTMLButtonElement>) => handleMenuIconClick?.(e, index)} className={'badge success'}>
 											member.mb_type
 										</Button>
 
@@ -163,18 +155,18 @@ export const InquiryList = (props: InquiryPanelListType) => {
 											MenuListProps={{
 												'aria-labelledby': 'fade-button',
 											}}
-											anchorEl={anchorEl[index]}
-											open={Boolean(anchorEl[index])}
+											anchorEl={anchorEl?.[index]}
+											open={Boolean(anchorEl?.[index])}
 											onClose={handleMenuIconClose}
 											TransitionComponent={Fade}
 											sx={{ p: 1 }}
 										>
-											<MenuItem onClick={(e: any) => generateMentorTypeHandle('member._id', 'mentor', 'originate')}>
+											<MenuItem onClick={() => generateMentorTypeHandle?.('member._id', 'mentor', 'originate')}>
 												<Typography variant={'subtitle1'} component={'span'}>
 													MENTOR
 												</Typography>
 											</MenuItem>
-											<MenuItem onClick={(e: any) => generateMentorTypeHandle('member._id', 'user', 'remove')}>
+											<MenuItem onClick={() => generateMentorTypeHandle?.('member._id', 'user', 'remove')}>
 												<Typography variant={'subtitle1'} component={'span'}>
 													USER
 												</Typography>

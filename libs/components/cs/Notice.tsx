@@ -9,7 +9,14 @@ const Notice = () => {
 	/** LIFECYCLES **/
 	/** HANDLERS **/
 
-	const data = [
+	interface NoticeItem {
+		no?: number;
+		event?: boolean;
+		title: string;
+		date: string;
+	}
+
+	const data: NoticeItem[] = [
 		{
 			no: 1,
 			event: true,
@@ -36,7 +43,7 @@ const Notice = () => {
 						<span>date</span>
 					</Box>
 					<Stack className={'bottom'}>
-						{data.map((ele: any) => (
+						{data.map((ele: NoticeItem) => (
 							<div className={`notice-card ${ele?.event && 'event'}`} key={ele.title}>
 								{ele?.event ? <div>event</div> : <span className={'notice-number'}>{ele.no}</span>}
 								<span className={'notice-title'}>{ele.title}</span>

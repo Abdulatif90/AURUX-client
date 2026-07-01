@@ -198,7 +198,6 @@ function createApolloClient() {
 		defaultOptions: {
 			watchQuery: {
 				errorPolicy: 'all',
-				notifyOnNetworkStatusChange: true,
 			},
 			query: {
 				errorPolicy: 'all',

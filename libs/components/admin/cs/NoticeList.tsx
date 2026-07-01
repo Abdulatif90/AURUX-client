@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import {
@@ -22,8 +22,6 @@ import Typography from '@mui/material/Typography';
 import { Stack } from '@mui/material';
 import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded';
 import { NotePencil } from 'phosphor-react';
-
-type Order = 'asc' | 'desc';
 
 interface Data {
 	category: string;
@@ -90,23 +88,22 @@ interface EnhancedTableProps {
 	numSelected: number;
 	onRequestSort: (event: React.MouseEvent<unknown>, property: keyof Data) => void;
 	onSelectAllClick: (event: React.ChangeEvent<HTMLInputElement>) => void;
-	order: Order;
+	order: 'asc' | 'desc';
 	orderBy: string;
 	rowCount: number;
 }
 
 interface EnhancedTableToolbarProps {
-	numSelected: number;
-	onRequestSort: (event: React.MouseEvent<unknown>, property: keyof Data) => void;
-	onSelectAllClick: (event: React.ChangeEvent<HTMLInputElement>) => void;
-	order: Order;
-	orderBy: string;
-	rowCount: number;
+	numSelected?: number;
+	onRequestSort?: (event: React.MouseEvent<unknown>, property: keyof Data) => void;
+	onSelectAllClick?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+	order?: 'asc' | 'desc';
+	orderBy?: string;
+	rowCount?: number;
 }
 
 const EnhancedTableToolbar = (props: EnhancedTableToolbarProps) => {
-	const [select, setSelect] = useState('');
-	const { onSelectAllClick, order, orderBy, numSelected, rowCount, onRequestSort } = props;
+	const { onSelectAllClick, order, orderBy, numSelected = 0, rowCount = 0, onRequestSort } = props;
 
 	return (
 		<>
@@ -167,12 +164,12 @@ const EnhancedTableToolbar = (props: EnhancedTableToolbarProps) => {
 
 interface NoticeListType {
 	dense?: boolean;
-	membersData?: any;
-	searchMembers?: any;
-	anchorEl?: any;
-	handleMenuIconClick?: any;
-	handleMenuIconClose?: any;
-	generateMentorTypeHandle?: any;
+	membersData?: unknown;
+	searchMembers?: unknown;
+	anchorEl?: (HTMLElement | null)[];
+	handleMenuIconClick?: (e: React.MouseEvent<HTMLButtonElement>, index: number) => void;
+	handleMenuIconClose?: () => void;
+	generateMentorTypeHandle?: (id: string, type: string, action: string) => void;
 }
 
 export const NoticeList = (props: NoticeListType) => {
@@ -195,10 +192,9 @@ export const NoticeList = (props: NoticeListType) => {
 		<Stack>
 			<TableContainer>
 				<Table sx={{ minWidth: 750 }} aria-labelledby="tableTitle" size={dense ? 'small' : 'medium'}>
-					{/*@ts-ignore*/}
 					<EnhancedTableToolbar />
 					<TableBody>
-						{[1, 2, 3, 4, 5].map((ele: any, index: number) => {
+						{[1, 2, 3, 4, 5].map((_: number, index: number) => {
 							const member_image = '/img/profile/defaultUser.svg';
 
 							return (

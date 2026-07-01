@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import useDeviceDetect from '../../hooks/useDeviceDetect';
 import { Stack, Typography } from '@mui/material';
 import { BoardArticle } from '../../types/board-article/board-article';
+import { CustomJwtPayload } from '../../types/customJwtPayload';
 import Moment from 'react-moment';
 import { REACT_APP_API_URL } from '../../config';
 import { useReactiveVar } from '@apollo/client';
@@ -15,7 +16,7 @@ import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 interface CommunityCardProps {
 	boardArticle: BoardArticle;
 	size?: string;
-	likeArticleHandler: any;
+	likeArticleHandler: (e: React.MouseEvent, user: CustomJwtPayload, id: string) => Promise<void>;
 }
 
 const CommunityCard = (props: CommunityCardProps) => {
@@ -51,7 +52,7 @@ const CommunityCard = (props: CommunityCardProps) => {
 			<Stack
 				sx={{ width: size === 'small' ? '285px' : '317px' }}
 				className="community-general-card-config"
-				onClick={(e: any) => chooseArticleHandler(e, boardArticle)}
+				onClick={(e: React.MouseEvent<HTMLDivElement>) => chooseArticleHandler(e, boardArticle)}
 			>
 				<Stack className="image-box">
 					<img src={imagePath} alt="" className="card-img" />
@@ -60,9 +61,9 @@ const CommunityCard = (props: CommunityCardProps) => {
 					<Stack>
 						<Typography
 							className="desc"
-							onClick={(e: any) => {
+							onClick={(e: React.MouseEvent<HTMLSpanElement>) => {
 								e.stopPropagation();
-								goMemberPage(boardArticle?.memberData?._id as string);
+								if (boardArticle?.memberData?._id) goMemberPage(boardArticle.memberData._id);
 							}}
 						>
 							{boardArticle?.memberData?.memberNick}
@@ -74,7 +75,7 @@ const CommunityCard = (props: CommunityCardProps) => {
 							<RemoveRedEyeIcon />
 						</IconButton>
 						<Typography className="view-cnt">{boardArticle?.articleViews}</Typography>
-						<IconButton color={'default'} onClick={(e: any) => likeArticleHandler(e, user, boardArticle?._id)}>
+						<IconButton color={'default'} onClick={(e: React.MouseEvent<HTMLButtonElement>) => likeArticleHandler(e, user, boardArticle?._id)}>
 							{boardArticle?.meLiked && boardArticle?.meLiked[0]?.myFavorite ? (
 								<FavoriteIcon color={'primary'} />
 							) : (

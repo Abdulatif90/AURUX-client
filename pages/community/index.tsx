@@ -6,8 +6,8 @@ import { Stack, Tab, Typography, Button, Pagination } from '@mui/material';
 import CommunityCard from '../../libs/components/common/CommunityCard';
 import useDeviceDetect from '../../libs/hooks/useDeviceDetect';
 import withLayoutBasic from '../../libs/components/layout/LayoutBasic';
-import { BoardArticle } from '../../libs/types/board-article/board-article';
-import { T } from '../../libs/types/common';
+import { BoardArticle, BoardArticles } from '../../libs/types/board-article/board-article';
+import { CustomJwtPayload } from '../../libs/types/customJwtPayload';
 import { BoardArticlesInquiry } from '../../libs/types/board-article/board-article.input';
 import { BoardArticleCategory } from '../../libs/enums/board-article.enum';
 import { LIKE_TARGET_BOARD_ARTICLE } from '../../apollo/user/mutation';
@@ -15,18 +15,23 @@ import { useMutation, useQuery } from '@apollo/client';
 import { GET_BOARD_ARTICLES } from '../../apollo/user/query';
 import { sweetMixinErrorAlert, sweetTopSmallSuccessAlert } from '../../libs/sweetAlert';
 import { Messages } from '../../libs/config';
+import { Direction } from '../../libs/enums/common.enum';
 
 export { getStaticProps } from '../../libs/getStaticProps';
 
-const Community: NextPage = ({ initialInput, ...props }: T) => {
+interface CommunityProps { initialInput: BoardArticlesInquiry; }
+const Community: NextPage<CommunityProps> = ({ initialInput }) => {
 	const device = useDeviceDetect();
 	const router = useRouter();
 	const { query } = router;
-	const articleCategory = query?.articleCategory as string;
-	const [searchCommunity, setSearchCommunity] = useState<BoardArticlesInquiry>(initialInput);
-	const [boardArticles, setBoardArticles] = useState<BoardArticle[]>([]);
-	const [totalCount, setTotalCount] = useState<number>(0);
-	if (articleCategory) initialInput.search.articleCategory = articleCategory;
+	const articleCategory = query?.articleCategory as BoardArticleCategory | undefined;
+	const [searchCommunity, setSearchCommunity] = useState<BoardArticlesInquiry>({
+		...initialInput,
+		search: {
+			...initialInput.search,
+			...(articleCategory ? { articleCategory } : {}),
+		},
+	});
 
 	/** APOLLO REQUESTS **/
 	const [likeTargetBoardArticle] = useMutation(LIKE_TARGET_BOARD_ARTICLE);
@@ -35,15 +40,13 @@ const Community: NextPage = ({ initialInput, ...props }: T) => {
 		data: boardArticlesData,
 		error: boardArticlesError,
 		refetch: boardArticlesRefetch,
-	} = useQuery(GET_BOARD_ARTICLES, {
+	} = useQuery<{ getBoardArticles: BoardArticles }>(GET_BOARD_ARTICLES, {
 		fetchPolicy: 'cache-and-network',
 		variables: { input: searchCommunity },
-		notifyOnNetworkStatusChange: true,
-		onCompleted: (data: T) => {
-			setBoardArticles(data?.getBoardArticles?.list);
-			setTotalCount(data?.getBoardArticles?.metaCounter[0]?.total);
-		},
 	});
+
+	const boardArticles = boardArticlesData?.getBoardArticles?.list ?? [];
+	const totalCount = boardArticlesData?.getBoardArticles?.metaCounter?.[0]?.total ?? 0;
 
 	/** LIFECYCLES **/
 	useEffect(() => {
@@ -59,9 +62,7 @@ const Community: NextPage = ({ initialInput, ...props }: T) => {
 	}, []);
 
 	/** HANDLERS **/
-	const tabChangeHandler = async (e: T, value: string) => {
-		console.log(value);
-
+	const tabChangeHandler = async (_e: React.SyntheticEvent, value: string) => {
 		setSearchCommunity({ ...searchCommunity, page: 1, search: { articleCategory: value as BoardArticleCategory } });
 		await router.push(
 			{
@@ -73,10 +74,11 @@ const Community: NextPage = ({ initialInput, ...props }: T) => {
 		);
 	};
 
-	const paginationHandler = (e: T, value: number) => {
+	const paginationHandler = (_e: React.ChangeEvent<unknown>, value: number) => {
 		setSearchCommunity({ ...searchCommunity, page: value });
 	};
-	const likeArticleHandler = async (e: any, user: T, id: string) => {
+
+	const likeArticleHandler = async (e: React.MouseEvent, user: CustomJwtPayload, id: string): Promise<void> => {
 		try {
 			e.stopPropagation();
 			if (!id) return;
@@ -89,9 +91,10 @@ const Community: NextPage = ({ initialInput, ...props }: T) => {
 			await boardArticlesRefetch({ input: searchCommunity });
 
 			await sweetTopSmallSuccessAlert('success', 800);
-		} catch (err: any) {
-			console.log('Error, likePropertyHandler', err.message);
-			sweetMixinErrorAlert(err.message).then();
+		} catch (err: unknown) {
+			const message = err instanceof Error ? err.message : String(err);
+			console.log('Error, likeArticleHandler', message);
+			sweetMixinErrorAlert(message).then();
 		}
 	};
 
@@ -101,7 +104,7 @@ const Community: NextPage = ({ initialInput, ...props }: T) => {
 		return (
 			<div id="community-list-page">
 				<div className="container">
-					<TabContext value={searchCommunity.search.articleCategory}>
+					<TabContext value={searchCommunity.search.articleCategory ?? BoardArticleCategory.FREE}>
 						<Stack className="main-box">
 							<Stack className="left-config">
 								<Stack className={'image-info'}>
@@ -122,22 +125,22 @@ const Community: NextPage = ({ initialInput, ...props }: T) => {
 									<Tab
 										value={'FREE'}
 										label={'Free Board'}
-										className={`tab-button ${searchCommunity.search.articleCategory == 'FREE' ? 'active' : ''}`}
+										className={`tab-button ${searchCommunity.search.articleCategory === 'FREE' ? 'active' : ''}`}
 									/>
 									<Tab
 										value={'RECOMMEND'}
 										label={'Recommendation'}
-										className={`tab-button ${searchCommunity.search.articleCategory == 'RECOMMEND' ? 'active' : ''}`}
+										className={`tab-button ${searchCommunity.search.articleCategory === 'RECOMMEND' ? 'active' : ''}`}
 									/>
 									<Tab
 										value={'NEWS'}
 										label={'News'}
-										className={`tab-button ${searchCommunity.search.articleCategory == 'NEWS' ? 'active' : ''}`}
+										className={`tab-button ${searchCommunity.search.articleCategory === 'NEWS' ? 'active' : ''}`}
 									/>
 									<Tab
 										value={'HUMOR'}
 										label={'Humor'}
-										className={`tab-button ${searchCommunity.search.articleCategory == 'HUMOR' ? 'active' : ''}`}
+										className={`tab-button ${searchCommunity.search.articleCategory === 'HUMOR' ? 'active' : ''}`}
 									/>
 								</TabList>
 							</Stack>
@@ -279,9 +282,9 @@ Community.defaultProps = {
 		page: 1,
 		limit: 6,
 		sort: 'createdAt',
-		direction: 'ASC',
+		direction: Direction.ASC,
 		search: {
-			articleCategory: 'FREE',
+			articleCategory: BoardArticleCategory.FREE,
 		},
 	},
 };

@@ -13,8 +13,8 @@ import TablePagination from '@mui/material/TablePagination';
 import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
 import { InquiryList } from '../../../libs/components/admin/cs/InquiryList';
 
-const InquiryArticles: NextPage = (props: any) => {
-	const [anchorEl, setAnchorEl] = useState<[] | HTMLElement[]>([]);
+const InquiryArticles: NextPage = () => {
+	const [anchorEl, setAnchorEl] = useState<(HTMLElement | null)[]>([]);
 
 	/** APOLLO REQUESTS **/
 	/** LIFECYCLES **/

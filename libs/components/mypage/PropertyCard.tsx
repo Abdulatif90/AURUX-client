@@ -13,9 +13,9 @@ import { REACT_APP_API_URL } from '../../config';
 
 interface PropertyCardProps {
 	property: Property;
-	deletePropertyHandler?: any;
+	deletePropertyHandler?: (id: string) => void;
 	memberPage?: boolean;
-	updatePropertyHandler?: any;
+	updatePropertyHandler?: (status: PropertyStatus, id: string) => void;
 }
 
 export const PropertyCard = (props: PropertyCardProps) => {
@@ -27,7 +27,6 @@ export const PropertyCard = (props: PropertyCardProps) => {
 
 	/** HANDLERS **/
 	const pushEditProperty = async (id: string) => {
-		console.log('+pushEditProperty: ', id);
 		await router.push({
 			pathname: '/mypage',
 			query: { category: 'addProperty', propertyId: id },
@@ -43,7 +42,7 @@ export const PropertyCard = (props: PropertyCardProps) => {
 		else return;
 	};
 
-	const handleClick = (event: any) => {
+	const handleClick = (event: React.MouseEvent<HTMLElement>) => {
 		setAnchorEl(event.currentTarget);
 	};
 
@@ -78,7 +77,7 @@ export const PropertyCard = (props: PropertyCardProps) => {
 						</Typography>
 					</Stack>
 				</Stack>
-				{!memberPage && property.propertyStatus !== 'SOLD' && (
+				{!memberPage && property.propertyStatus !== PropertyStatus.SOLD && (
 					<Menu
 						anchorEl={anchorEl}
 						open={open}
@@ -105,7 +104,7 @@ export const PropertyCard = (props: PropertyCardProps) => {
 									disableRipple
 									onClick={() => {
 										handleClose();
-										updatePropertyHandler(PropertyStatus.SOLD, property?._id);
+										updatePropertyHandler?.(PropertyStatus.SOLD, property._id);
 									}}
 								>
 									Sold
@@ -123,7 +122,7 @@ export const PropertyCard = (props: PropertyCardProps) => {
 						<IconButton className="icon-button" onClick={() => pushEditProperty(property._id)}>
 							<ModeIcon className="buttons" />
 						</IconButton>
-						<IconButton className="icon-button" onClick={() => deletePropertyHandler(property._id)}>
+						<IconButton className="icon-button" onClick={() => deletePropertyHandler?.(property._id)}>
 							<DeleteIcon className="buttons" />
 						</IconButton>
 					</Stack>

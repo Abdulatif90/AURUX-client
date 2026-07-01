@@ -1,16 +1,14 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { Box, Button, FormControl, MenuItem, Stack, Typography, Select, TextField } from '@mui/material';
+import { Box, Button, FormControl, MenuItem, Stack, Typography, Select, TextField, SelectChangeEvent } from '@mui/material';
 import { BoardArticleCategory } from '../../enums/board-article.enum';
 import { Editor } from '@toast-ui/react-editor';
 import { getJwtToken, isTokenValid } from '../../auth';
 import { REACT_APP_API_URL } from '../../config';
 import { useRouter } from 'next/router';
 import axios from 'axios';
-import { T } from '../../types/common';
 import '@toast-ui/editor/dist/toastui-editor.css';
 import { useMutation } from '@apollo/client';
 import { CREATE_BOARD_ARTICLE } from '../../../apollo/user/mutation';
-import { typeFromAST } from 'graphql';
 import { Message } from '../../enums/common.enum';
 import { sweetErrorHandling, sweetTopSuccessAlert } from '../../sweetAlert';
 
@@ -31,8 +29,10 @@ const TuiEditor = () => {
 		return { articleTitle, articleContent, articleImage };
 	}, []);
 
+	const CREATE_SUCCESS_ALERT_DURATION_MS = 700;
+
 	/** HANDLERS **/
-	const uploadImage = async (image: any) => {
+	const uploadImage = async (image: File | Blob): Promise<string | undefined> => {
 		try {
 			// Token'ni dinamik olamiz
 			const token = getJwtToken();
@@ -84,18 +84,18 @@ const TuiEditor = () => {
 			memoizedValues.articleImage = responseImage;
 
 			return `${REACT_APP_API_URL}/${responseImage}`;
-		} catch (err: any) {
+		} catch (err: unknown) {
 			console.error('❌ Article rasm yuklashda xatolik:', err);
-			console.error('Error response:', err.response?.data);
+			if (err instanceof Error) console.error('Error response:', (err as any).response?.data);
 			throw err;
 		}
 	};
 
-	const changeCategoryHandler = (e: any) => {
-		setArticleCategory(e.target.value);
+	const changeCategoryHandler = (e: SelectChangeEvent<BoardArticleCategory>): void => {
+		setArticleCategory(e.target.value as BoardArticleCategory);
 	};
 
-	const articleTitleHandler = (e: T) => {
+	const articleTitleHandler = (e: React.ChangeEvent<HTMLInputElement>): void => {
 		console.log(e.target.value);
 		memoizedValues.articleTitle = e.target.value;
 	};
@@ -118,23 +118,21 @@ const TuiEditor = () => {
 					},
 				},
 			});
-			await sweetTopSuccessAlert('Article is created succeefully', 700);
+			await sweetTopSuccessAlert('Article is created successfully', CREATE_SUCCESS_ALERT_DURATION_MS);
 			await router.push({
 				pathname: '/mypage',
 				query: {
-					categry: 'myArticles',
+					category: 'myArticles',
 				},
 			});
-		} catch (err: any) {
+		} catch (err: unknown) {
 			console.log(err);
-			sweetErrorHandling(new Error(Message.INSERT_ALL_INPUTS)).then();
+			sweetErrorHandling(err instanceof Error ? err : new Error(Message.INSERT_ALL_INPUTS)).then();
 		}
 	};
 	
-	const doDisabledCheck = () => {
-		if (memoizedValues.articleContent === '' || memoizedValues.articleTitle === '') {
-			return true;
-		}
+	const doDisabledCheck = (): boolean => {
+		return memoizedValues.articleContent === '' || memoizedValues.articleTitle === '';
 	};
 
 	return (
@@ -178,8 +176,7 @@ const TuiEditor = () => {
 				placeholder={'Type here'}
 				previewStyle={'vertical'}
 				height={'640px'}
-				// @ts-ignore
-				initialEditType={'WYSIWYG'}
+				initialEditType={'wysiwyg'}
 				toolbarItems={[
 					['heading', 'bold', 'italic', 'strike'],
 					['image', 'table', 'link'],
@@ -187,14 +184,11 @@ const TuiEditor = () => {
 				]}
 				ref={editorRef}
 				hooks={{
-					addImageBlobHook: async (image: any, callback: any) => {
+					addImageBlobHook: async (image: File | Blob, callback: (url: string, altText?: string) => void) => {
 						const uploadedImageURL = await uploadImage(image);
-						callback(uploadedImageURL);
+						callback(uploadedImageURL ?? '');
 						return false;
 					},
-				}}
-				events={{
-					load: function (param: any) {},
 				}}
 			/>
 

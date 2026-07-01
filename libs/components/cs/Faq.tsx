@@ -2,7 +2,6 @@ import React, { SyntheticEvent, useState } from 'react';
 import MuiAccordion, { AccordionProps } from '@mui/material/Accordion';
 import { AccordionDetails, Box, Stack, Typography } from '@mui/material';
 import MuiAccordionSummary, { AccordionSummaryProps } from '@mui/material/AccordionSummary';
-import { useRouter } from 'next/router';
 import { styled } from '@mui/material/styles';
 import useDeviceDetect from '../../hooks/useDeviceDetect';
 import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
@@ -30,9 +29,15 @@ const AccordionSummary = styled((props: AccordionSummaryProps) => (
 	},
 }));
 
+interface FaqItem {
+	id: string;
+	subject: string;
+	content: string;
+}
+type FaqData = Record<string, FaqItem[]>;
+
 const Faq = () => {
 	const device = useDeviceDetect();
-	const router = useRouter();
 	const [category, setCategory] = useState<string>('property');
 	const [expanded, setExpanded] = useState<string | false>('panel1');
 
@@ -48,7 +53,7 @@ const Faq = () => {
 		setExpanded(newExpanded ? panel : false);
 	};
 
-	const data: any = {
+	const data: FaqData = {
 		property: [
 			{
 				id: '00f5a45ed8897f8090116a01',
@@ -498,7 +503,7 @@ const Faq = () => {
 				</Box>
 				<Box className={'wrap'} component={'div'}>
 					{data[category] &&
-						data[category].map((ele: any) => (
+						data[category].map((ele: FaqItem) => (
 							<Accordion expanded={expanded === ele?.id} onChange={handleChange(ele?.id)} key={ele?.subject}>
 								<AccordionSummary id="panel1d-header" className="question" aria-controls="panel1d-content">
 									<Typography className="badge" variant={'h4'}>
