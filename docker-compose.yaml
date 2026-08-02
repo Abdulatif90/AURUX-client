@@ -1,0 +1,26 @@
+#yangi versiya - versiya ko'rsatilmaydi
+#version: '3.3'
+
+services:
+  aurux-react:
+    container_name: aurux-client
+    restart: always
+    image: node:20.10.0
+    ports:
+      - 4000:3000
+    
+    environment:
+      - PORT=3000
+    
+    volumes:
+      - ./:/usr/src/aurux-client
+    working_dir: /usr/src/aurux-client
+    networks:
+      - client-network
+    #for production
+    command: bash -c "npm install -g yarn && yarn && yarn run build && yarn run start"
+    
+    
+networks:
+  client-network:
+    driver: bridge
